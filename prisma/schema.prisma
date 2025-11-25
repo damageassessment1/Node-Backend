@@ -1,0 +1,129 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+// Enums
+enum Gender {
+  male
+  female
+}
+
+enum MaritalStatus {
+  single
+  married
+  divorced
+  widowed
+}
+
+enum CitizenStatus {
+  alive
+  dead
+}
+
+enum LocationType {
+  before_war
+  after_war
+  temporary
+  current
+}
+
+enum UserRole {
+  admin
+  supervisor
+}
+
+enum VerificationStatus {
+  pending   // nothing verified yet
+  national_id_verified
+  questions_verified
+  verified  // all steps completed
+}
+
+
+// Models
+
+
+model User {
+  id                Int      @id @default(autoincrement())
+  name              String
+  email             String   @unique
+  email_verified_at DateTime?
+  password          String
+  role              UserRole @default(admin)
+  remember_token    String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  @@map("users")
+}
+
+
+
+model Citizen {
+  id               Int       @id @default(autoincrement())
+  national_id      String    @unique
+  first_name       String
+  father_name      String?
+  grandfather_name String?
+  family_name      String
+  full_name        String?
+  mother_name      String?
+  place_of_birth   String?
+  country          String?
+  date_of_birth    DateTime?
+  gender           Gender?
+  marital_status   MaritalStatus?
+  status           CitizenStatus @default(alive)
+  password         String
+  extra_data       Json?
+  verification_status VerificationStatus @default(pending)
+  locations        Location[]
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  @@map("citizens")
+
+}
+
+
+model Location {
+  id           Int          @id @default(autoincrement())
+  citizen      Citizen      @relation(fields: [citizenId], references: [id])
+  citizenId    Int
+  type         LocationType
+  governorate  String?
+  town         String?
+  street       String?
+  block_number String?
+  house_number String?
+  latitude     Decimal?     @db.Decimal(10, 7)
+  longitude    Decimal?     @db.Decimal(10, 7)
+  notes        String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@map("locations")
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
