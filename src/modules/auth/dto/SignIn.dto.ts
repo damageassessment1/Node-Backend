@@ -1,14 +1,16 @@
 import { IsEmail, IsEnum, IsNotEmpty, IsOptional } from "class-validator"
 
+type UserRole = 'admin' | 'supervisor';
+
 export class SigninDto {
     @IsEmail()
     @IsNotEmpty()
-    nationald: string;
-    
+    email: string;
+
     @IsNotEmpty()
     password: string;
 
     @IsOptional()
-    @IsEnum(Role)
-    role?: Role;
+    @IsEnum(['admin', 'supervisor'])
+    role?: UserRole;
 }

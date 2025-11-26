@@ -1,11 +1,14 @@
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException, Type } from '@nestjs/common';
-import { Role } from '@prisma/client';
+
+type UserRole = 'admin' | 'supervisor';
 
 @Injectable()
 class RolesGuardBase implements CanActivate {
-  constructor(private readonly roles: Role[]) {}
+  constructor(private readonly roles: UserRole[]) {}
 
   canActivate(context: ExecutionContext): boolean {
+    // Bypass role checks completely when auth is disabled (local testing)
+    if (process.env.DISABLE_AUTH === 'true') return true;
     const { user } = context.switchToHttp().getRequest();
 
     if (!user) {
@@ -22,7 +25,7 @@ class RolesGuardBase implements CanActivate {
 }
 
 // Factory to create a guard instance
-export function RolesGuard(...roles: Role[]): Type<CanActivate> {
+export function RolesGuard(...roles: UserRole[]): Type<CanActivate> {
   @Injectable()
   class RoleGuardMixin extends RolesGuardBase {
     constructor() {

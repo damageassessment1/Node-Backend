@@ -8,7 +8,6 @@ import { PrismaService } from "../database/prisma.service";
 import { CreateUserDto, UpdateUserDto } from "./dto";
 import * as bcrypt from "bcryptjs";
 import { baseUserSelect } from "src/common/prisma/selects";
-import { Role } from "@prisma/client";
 
 @Injectable()
 export class UsersService {
@@ -93,34 +92,10 @@ export class UsersService {
   async searchSupervisors(query: string) {
     return this.prisma.user.findMany({
       where: {
-        role: Role.SUPERVISOR,
+        role: 'supervisor',
         OR: [
           { name: { contains: query, mode: "insensitive" } },
           { email: { contains: query, mode: "insensitive" } },
-        ],
-      },
-      select: baseUserSelect,
-    });
-  }
-
-  
-  async searchStudents(query: string) {
-    return this.prisma.user.findMany({
-      where: {
-        role: Role.STUDENT,
-        AND: [
-          {
-            OR: [
-              { name: { contains: query, mode: "insensitive" } },
-              { email: { contains: query, mode: "insensitive" } },
-            ],
-          },
-          {
-            // no groups at all
-            groupMembers: {
-              none: {},
-            },
-          },
         ],
       },
       select: baseUserSelect,
