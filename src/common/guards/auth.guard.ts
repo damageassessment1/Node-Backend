@@ -8,6 +8,7 @@ import { Reflector } from "@nestjs/core";
 import { JwtService } from "@nestjs/jwt";
 import { Request } from "express";
 import { PrismaService } from "src/modules/database/prisma.service";
+import { baseUserSelect, citizenSelect } from "src/common/prisma/selects";
 
 export const PUBLIC_END_POINT_KEY = "optionalAuth";
 
@@ -57,18 +58,15 @@ export class AuthGuard implements CanActivate {
       if (payload.type === "user") {
         const user = await this.prisma.user.findUnique({
           where: { id: payload.sub },
+          select: baseUserSelect,
         });
         if (!user) throw new UnauthorizedException("User not found");
-        const { password, ...rest } = user;
-        request["user"] = rest;
+        request["user"] = user;
         request["citizen"] = undefined;
       } else if (payload.type === "citizen") {
-        const citizen = await this.prisma.citizen.findUnique({
-          where: { id: payload.sub },
-        });
+        const citizen = await this.prisma.citizen.findUnique({ where: { id: payload.sub }, select: citizenSelect });
         if (!citizen) throw new UnauthorizedException("Citizen not found");
-        const { password, ...rest } = citizen;
-        request["citizen"] = rest;
+        request["citizen"] = citizen;
         request["user"] = undefined;
       } else {
         throw new UnauthorizedException("Invalid token type");

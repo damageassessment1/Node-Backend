@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { AuthModule } from './modules/auth/auth.module';
 import { DatabaseModule } from './modules/database/database.module';
 import { UsersModule } from './modules/users/users.module';
+import { CitizensModule } from './modules/citizens/citizens.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -15,6 +16,7 @@ import { KeepAliveService } from './keep-alive.service';
     AuthModule,
     DatabaseModule,
     UsersModule,
+    CitizensModule,
   ],
   providers:[AppService,KeepAliveService],
   controllers:[AppController]

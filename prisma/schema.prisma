@@ -56,15 +56,16 @@ enum VerificationStatus {
 
 
 model User {
-  id                Int      @id @default(autoincrement())
+  id                Int       @id @default(autoincrement())
   name              String
-  email             String   @unique
+  email             String    @unique
   email_verified_at DateTime?
   password          String
-  role              UserRole @default(admin)
+  role              UserRole  @default(admin)
   remember_token    String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  // supervisors determined by role only; no relation field to citizens
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
   @@map("users")
 }
 
@@ -88,12 +89,16 @@ model Citizen {
   password         String
   extra_data       Json?
   verification_status VerificationStatus @default(pending)
+  // supervisorId removed: supervision is handled via user.role only
   locations        Location[]
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
   @@map("citizens")
 
 }
+
+
+// SupervisorAssignment removed: supervision handled via user.role and admin assignment logic
 
 
 model Location {
