@@ -74,10 +74,10 @@ model User {
 model Citizen {
   id               Int       @id @default(autoincrement())
   national_id      String    @unique
-  first_name       String
+  first_name       String?
   father_name      String?
   grandfather_name String?
-  family_name      String
+  family_name      String?
   full_name        String?
   mother_name      String?
   place_of_birth   String?
@@ -86,7 +86,7 @@ model Citizen {
   gender           Gender?
   marital_status   MaritalStatus?
   status           CitizenStatus @default(alive)
-  password         String
+  password         String?
   extra_data       Json?
   verification_status VerificationStatus @default(pending)
   // supervisorId removed: supervision is handled via user.role only
@@ -121,14 +121,50 @@ model Location {
 }
 
 
+model Person {
+  id               Int       @id @map("ci_id_num")
+  firstName        String?   @map("ci_first_arb")
+  fatherName       String?   @map("ci_father_arb")
+  grandfatherName  String?   @map("ci_grand_father_arb")
+  familyName       String?   @map("ci_family_arb")
+  birthTownCode    String?   @map("ci_birth_tb_cd")
+  birthCode        String?   @map("ci_birth_cd")
+  birthDate        String?   @map("ci_birth_dt")
+  sexCode          String?   @map("ci_sex_cd")
+  personalCode     String?   @map("ci_personal_cd")
+  deathDate        String?   @map("ci_dead_dt")
+  motherName       String?   @map("mother_name1")
+  citizenship      String?   @map("citttty")
+  city             String?   @map("city")
+  street           String?   @map("street")
+  region           String?   @map("regon")
+  houseNumber      String?   @map("house_no")
 
+  relations        Relation[] @relation("PersonRelations")   
+  relatedTo        Relation[] @relation("RelativeRelations") 
 
+  @@map("persons")
+}
 
+model Relation {
+  id               Int     @id @default(autoincrement())
+  personId         Int     @map("cf_id_num")
+  relationCodeId   Int     @map("cf_relative_cd")
+  relativePersonId Int     @map("cf_id_relative")
 
+  person           Person  @relation("PersonRelations", fields: [personId], references: [id])
+  relationCode     Code    @relation(fields: [relationCodeId], references: [id])
+  relativePerson   Person  @relation("RelativeRelations", fields: [relativePersonId], references: [id])
 
+  @@map("relations")
+}
 
+model Code {
+  id           Int       @id @default(autoincrement())
+  nameEn       String    @map("name_en")
+  nameAr       String    @map("name_ar")
 
+  relations    Relation[]
 
-
-
-
+  @@map("codes")
+}
