@@ -48,10 +48,7 @@ export class AuthController {
   @Post("citizen-login")
   @Public()
   async citizenLogin(@Body() body: { national_id: string; password: string }) {
-    return this.authService.citizenLogin(
-      body.national_id,
-      body.password
-    );
+    return this.authService.citizenLogin(body.national_id, body.password);
   }
 
   @Post("signin")
@@ -94,12 +91,11 @@ export class AuthController {
     }
   }
 
-
-
-
-
-
-
-
-
+  @Get("me")
+  async me(@Req() req: Request) {
+    // Return authenticated user or citizen; useful for token debugging in Postman
+    const u = (req as any).user;
+    const c = (req as any).citizen;
+    return { user: u ?? null, citizen: c ?? null };
+  }
 }
