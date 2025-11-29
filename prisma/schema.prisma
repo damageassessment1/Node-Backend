@@ -1,3 +1,6 @@
+
+
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -69,50 +72,82 @@ model Location {
   @@map("locations")
 }
 
+
 model Person {
-  id              Int        @id @map("ci_id_num")
-  firstName       String?    @map("ci_first_arb")
-  fatherName      String?    @map("ci_father_arb")
-  grandfatherName String?    @map("ci_grand_father_arb")
-  familyName      String?    @map("ci_family_arb")
-  birthTownCode   String?    @map("ci_birth_tb_cd")
-  birthCode       String?    @map("ci_birth_cd")
-  birthDate       String?    @map("ci_birth_dt")
-  sexCode         String?    @map("ci_sex_cd")
-  personalCode    String?    @map("ci_personal_cd")
-  deathDate       String?    @map("ci_dead_dt")
-  motherName      String?    @map("mother_name1")
-  citizenship     String?    @map("citttty")
-  city            String?    @map("city")
-  street          String?    @map("street")
-  region          String?    @map("regon")
-  houseNumber     String?    @map("house_no")
-  relations       Relation[] @relation("PersonRelations")
-  relatedTo       Relation[] @relation("RelativeRelations")
+  id               Int       @id @default(autoincrement())
+  national_id      Int       @unique @map("ci_id_num")
+  firstName        String?   @map("ci_first_arb")
+  fatherName       String?   @map("ci_father_arb")
+  grandfatherName  String?   @map("ci_grand_father_arb")
+  familyName       String?   @map("ci_family_arb")
+  birthTownCode    String?   @map("ci_birth_tb_cd")
+  birthCode        String?   @map("ci_birth_cd")
+  birthDate        String?   @map("ci_birth_dt")
+  sexCode          String?   @map("ci_sex_cd")
+  personalCode     String?   @map("ci_personal_cd")
+  deathDate        String?   @map("ci_dead_dt")
+  motherName       String?   @map("mother_name1")
+  citizenship      String?   @map("citttty")
+  city             String?   @map("city")
+  street           String?   @map("street")
+  region           String?   @map("regon")
+  houseNumber      String?   @map("house_no")
+
+  relations        Relation[] @relation("PersonRelations")   
+  relatedTo        Relation[] @relation("RelativeRelations") 
 
   @@map("persons")
 }
 
+
 model Relation {
-  id               Int    @id @default(autoincrement())
-  personId         Int    @map("cf_id_num")
-  relationCodeId   Int    @map("cf_relative_cd")
-  relativePersonId Int    @map("cf_id_relative")
-  person           Person @relation("PersonRelations", fields: [personId], references: [id])
-  relativePerson   Person @relation("RelativeRelations", fields: [relativePersonId], references: [id])
-  relationCode     Code   @relation(fields: [relationCodeId], references: [id])
+  id               Int     @id @default(autoincrement())
+  personId         Int     @map("cf_id_num")
+  relationCodeId   Int     @map("cf_relative_cd")
+  relativePersonId Int     @map("cf_id_relative")
+
+  person           Person  @relation("PersonRelations", fields: [personId], references: [national_id])
+  relationCode     Code    @relation(fields: [relationCodeId], references: [id])
+  relativePerson   Person  @relation("RelativeRelations", fields: [relativePersonId], references: [national_id])
 
   @@map("relations")
 }
 
+
 model Code {
-  id        Int        @id @default(autoincrement())
-  nameEn    String     @map("name_en")
-  nameAr    String     @map("name_ar")
-  relations Relation[]
+  id           Int       @id @default(autoincrement())
+  nameEn       String    @map("name_en")
+  nameAr       String    @map("name_ar")
+
+  relations    Relation[]
 
   @@map("codes")
 }
+
+
+model Application {
+  id               Int               @id @default(autoincrement())
+  citizenId        Int
+  // locationId removed; linkage is tracked on Location.applicationId instead
+  application_date DateTime          @default(now())
+  status           ApplicationStatus @default(pending)
+  notes            String?
+  createdById      Int? // User that created the application
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  citizen   Citizen   @relation(fields: [citizenId], references: [id])
+  location  Location? @relation("ApplicationToLocation")
+  createdBy User?     @relation("UserCreatedApplications", fields: [createdById], references: [id])
+
+  @@index([citizenId])
+  @@map("applications")
+}
+
+
+
+
+
 
 enum Gender {
   male
@@ -156,71 +191,4 @@ enum ApplicationStatus {
   approved
   rejected
   closed
-}
-
-
-model Person {
-  id               Int       @id @default(autoincrement())
-  national_id      Int       @unique @map("ci_id_num")
-  firstName        String?   @map("ci_first_arb")
-  fatherName       String?   @map("ci_father_arb")
-  grandfatherName  String?   @map("ci_grand_father_arb")
-  familyName       String?   @map("ci_family_arb")
-  birthTownCode    String?   @map("ci_birth_tb_cd")
-  birthCode        String?   @map("ci_birth_cd")
-  birthDate        String?   @map("ci_birth_dt")
-  sexCode          String?   @map("ci_sex_cd")
-  personalCode     String?   @map("ci_personal_cd")
-  deathDate        String?   @map("ci_dead_dt")
-  motherName       String?   @map("mother_name1")
-  citizenship      String?   @map("citttty")
-  city             String?   @map("city")
-  street           String?   @map("street")
-  region           String?   @map("regon")
-  houseNumber      String?   @map("house_no")
-
-  relations        Relation[] @relation("PersonRelations")   
-  relatedTo        Relation[] @relation("RelativeRelations") 
-
-  @@map("persons")
-}
-
-model Relation {
-  id               Int     @id @default(autoincrement())
-  personId         Int     @map("cf_id_num")
-  relationCodeId   Int     @map("cf_relative_cd")
-  relativePersonId Int     @map("cf_id_relative")
-
-  person           Person  @relation("PersonRelations", fields: [personId], references: [national_id])
-  relationCode     Code    @relation(fields: [relationCodeId], references: [id])
-  relativePerson   Person  @relation("RelativeRelations", fields: [relativePersonId], references: [national_id])
-
-  @@map("relations")
-}
-
-model Code {
-  id           Int       @id @default(autoincrement())
-  nameEn       String    @map("name_en")
-  nameAr       String    @map("name_ar")
-
-  relations    Relation[]
-
-  @@map("codes")
-model Application {
-  id               Int               @id @default(autoincrement())
-  citizenId        Int
-  // locationId removed; linkage is tracked on Location.applicationId instead
-  application_date DateTime          @default(now())
-  status           ApplicationStatus @default(pending)
-  notes            String?
-  createdById      Int? // User that created the application
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-
-  citizen   Citizen   @relation(fields: [citizenId], references: [id])
-  location  Location? @relation("ApplicationToLocation")
-  createdBy User?     @relation("UserCreatedApplications", fields: [createdById], references: [id])
-
-  @@index([citizenId])
-  @@map("applications")
 }
