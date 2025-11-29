@@ -1,14 +1,23 @@
 version: '3.8'
 
 services:
-  nestjs-app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+  dev-db:
+    image: postgres:13
     ports:
-      - '3000:3000'
-    volumes:
-      - .:/usr/src/app
+      - '5432:5432'
     environment:
-      NODE_ENV: development
-    command: npm run start:dev
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123
+      POSTGRES_DB: gaza-damage-assessment
+  # volumes:
+  #     - db-data:/var/lib/postgresql/data
+
+  # nestjs-app:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - '3000:3000'
+  #   volumes:
+  #     - .:/usr/src/app
+  #   command: npm run start:dev

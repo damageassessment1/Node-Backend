@@ -1,0 +1,26 @@
+export const citizenSelect = {
+  id: true,
+  national_id: true,
+  first_name: true,
+  family_name: true,
+  verification_status: true,
+  status: true,
+  locations: {
+    select: {
+      id: true,
+      type: true,
+      governorate: true,
+      town: true,
+      street: true,
+      block_number: true,
+      house_number: true,
+      latitude: true,
+      longitude: true,
+      notes: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  },
+  createdAt: true,
+  updatedAt: true,
+} as const;
