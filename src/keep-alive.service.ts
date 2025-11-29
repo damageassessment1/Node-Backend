@@ -12,7 +12,7 @@ export class KeepAliveService {
   // Runs every 10 minutes
   @Cron(CronExpression.EVERY_10_MINUTES)
   async pingServer() {
-    const url = `https://backend-6adn.onrender.com/keep-alive`; 
+    const url = `${process.env.LIVE_APP_URL}/keep-alive`; 
     try {
       const res = await firstValueFrom(this.http.get(url));
       this.logger.log(`Pinged ${url}, data: ${res.data.data}`);
