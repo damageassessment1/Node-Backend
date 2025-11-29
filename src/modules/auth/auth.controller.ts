@@ -3,16 +3,52 @@ import { Request } from "express";
 import { AuthService } from "./auth.service";
 import { SigninDto } from "./dto";
 import { Public } from "src/common/decorators/public-endpoint.decorator";
-import { User } from "src/common/decorators/user.decorator";
 
 @Controller("auth")
 export class AuthController {
   constructor(private authService: AuthService) {}
 
-  @Post("signup")
+  /**
+   * Step 1: Verify National ID
+   */
+  @Post("verify-id")
   @Public()
-  verifyNationalId(@Body("national_id") nationalId: string) {
+  async verifyNationalId(@Body("national_id") nationalId: string) {
     return this.authService.verifyNationalId(nationalId);
+  }
+  /**
+   * Step 2: Verify Personal Questions
+   */
+  @Post("verify-questions")
+  @Public()
+  async verifyQuestions(
+    @Body() body: { national_id: string; answers: Record<string, string> }
+  ) {
+    return this.authService.verifySecurityQuestions(
+      body.national_id,
+      body.answers
+    );
+  }
+
+  /**
+   * Step 3: Complete Signup
+   */
+  @Post("complete-signup")
+  @Public()
+  async signup(@Body() body: { national_id: string; password: string }) {
+    return this.authService.completeCitizenSignup(
+      body.national_id,
+      body.password
+    );
+  }
+
+  /**
+   * Step 3: Citizen Login
+   */
+  @Post("citizen-login")
+  @Public()
+  async citizenLogin(@Body() body: { national_id: string; password: string }) {
+    return this.authService.citizenLogin(body.national_id, body.password);
   }
 
   @Post("signin")
@@ -54,7 +90,7 @@ export class AuthController {
       throw err;
     }
   }
-w
+
   @Get("me")
   async me(@Req() req: Request) {
     // Return authenticated user or citizen; useful for token debugging in Postman
