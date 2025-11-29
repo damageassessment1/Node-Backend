@@ -122,7 +122,8 @@ model Location {
 
 
 model Person {
-  id               Int       @id @map("ci_id_num")
+  id               Int       @id @default(autoincrement())
+  national_id      Int       @unique @map("ci_id_num")
   firstName        String?   @map("ci_first_arb")
   fatherName       String?   @map("ci_father_arb")
   grandfatherName  String?   @map("ci_grand_father_arb")
@@ -152,9 +153,9 @@ model Relation {
   relationCodeId   Int     @map("cf_relative_cd")
   relativePersonId Int     @map("cf_id_relative")
 
-  person           Person  @relation("PersonRelations", fields: [personId], references: [id])
+  person           Person  @relation("PersonRelations", fields: [personId], references: [national_id])
   relationCode     Code    @relation(fields: [relationCodeId], references: [id])
-  relativePerson   Person  @relation("RelativeRelations", fields: [relativePersonId], references: [id])
+  relativePerson   Person  @relation("RelativeRelations", fields: [relativePersonId], references: [national_id])
 
   @@map("relations")
 }
