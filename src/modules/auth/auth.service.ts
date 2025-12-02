@@ -1,4 +1,11 @@
-import { ConflictException, Injectable, UnauthorizedException, ForbiddenException, HttpException, HttpStatus } from "@nestjs/common";
+import {
+  ConflictException,
+  Injectable,
+  UnauthorizedException,
+  ForbiddenException,
+  HttpException,
+  HttpStatus,
+} from "@nestjs/common";
 import * as bcrypt from "bcryptjs";
 import { JwtService } from "@nestjs/jwt";
 import { SigninDto } from "./dto";
@@ -6,13 +13,10 @@ import { baseUserSelect } from "src/common/prisma/selects";
 import { PrismaService } from "../database/prisma.service";
 import { VerificationStatus } from "@prisma/client";
 
-
-
 export interface VerificationQuestion {
   key: string;
   question: string;
 }
-
 
 @Injectable()
 export class AuthService {
@@ -29,7 +33,7 @@ export class AuthService {
 
     // Fetch person with relations using national_id field
     const person = await this.prisma.person.findUnique({
-      where: { national_id: idNum },
+      where: { national_id: nationalId },
       include: {
         relations: {
           include: {
@@ -50,7 +54,7 @@ export class AuthService {
 
     // Build verification questions
     const allQuestions = this.buildVerificationQuestions(person);
-
+    
     if (allQuestions.length === 0) {
       throw new HttpException(
         "بيانات غير كافية لتوليد أسئلة التحقق",
@@ -59,7 +63,7 @@ export class AuthService {
     }
 
     // Select 2 random questions
-    
+
     const selectedQuestions = this.selectRandomQuestions(allQuestions, 2);
 
     return {
@@ -80,6 +84,15 @@ export class AuthService {
 
     if (!citizen) {
       throw new UnauthorizedException("المواطن غير موجود");
+    }
+
+    if (
+      citizen.verification_status === VerificationStatus.questions_verified &&
+      citizen.password
+    ) {
+      throw new ForbiddenException(
+        "تم التحقق من الرقم الوطني مسبقاً توجه لصفحة الدخول"
+      );
     }
 
     // Parse question keys and validate answers
@@ -114,7 +127,9 @@ export class AuthService {
       throw new UnauthorizedException("المواطن غير موجود");
     }
 
-    if (citizen.verification_status !== VerificationStatus.national_id_verified) {
+    if (
+      citizen.verification_status !== VerificationStatus.national_id_verified
+    ) {
       throw new ForbiddenException("يجب إكمال التحقق من الهوية قبل التسجيل");
     }
 
@@ -128,6 +143,8 @@ export class AuthService {
       },
     });
 
+    const { password:secret,...safeCitizen} = updated;
+
     const token = this.jwtService.sign({
       id: updated.id,
       national_id: updated.national_id,
@@ -136,49 +153,48 @@ export class AuthService {
     return {
       success: true,
       message: "تم إكمال التسجيل بنجاح",
+      user:safeCitizen,
       token,
     };
   }
 
   async citizenLogin(national_id: string, password: string) {
-  // 1. Find citizen
-  const citizen = await this.prisma.citizen.findUnique({
-    where: { national_id },
-  });
+    // 1. Find citizen
+    const citizen = await this.prisma.citizen.findUnique({
+      where: { national_id },
+    });
 
-  if (!citizen) {
-    throw new UnauthorizedException("المستخدم غير موجود");
-  }
+    if (!citizen) {
+      throw new UnauthorizedException("المستخدم غير موجود");
+    }
 
-  // 2. Ensure signup is completed
-  if (!citizen.password) {
-    throw new ForbiddenException("لم يتم إكمال التسجيل بعد");
-  }
+    // 2. Ensure signup is completed
+    if (!citizen.password) {
+      throw new ForbiddenException("لم يتم إكمال التسجيل بعد");
+    }
 
-  // 3. Compare password
-  const isMatch = await bcrypt.compare(password, citizen.password);
-  if (!isMatch) {
-    throw new UnauthorizedException("كلمة المرور غير صحيحة");
-  }
+    // 3. Compare password
+    const isMatch = await bcrypt.compare(password, citizen.password);
+    if (!isMatch) {
+      throw new UnauthorizedException("كلمة المرور غير صحيحة");
+    }
 
-  // 4. Generate token
-  const token = this.jwtService.sign({
-    id: citizen.id,
-    national_id: citizen.national_id,
-  });
-
-  return {
-    success: true,
-    message: "تم تسجيل الدخول بنجاح",
-    token,
-    user: {
+    // 4. Generate token
+    const token = this.jwtService.sign({
       id: citizen.id,
       national_id: citizen.national_id,
-      verification_status: citizen.verification_status,
-    },
-  };
-}
+    });
 
+    const { password:secret,...safeCitizen} = citizen;
+
+
+    return {
+      success: true,
+      message: "تم تسجيل الدخول بنجاح",
+      user: safeCitizen,
+      token,
+    };
+  }
 
   // ============================================
   // PRIVATE HELPER METHODS
@@ -191,13 +207,14 @@ export class AuthService {
 
     if (citizen) {
       // Check if already at or beyond national_id_verified stage
-     
 
       if (
-       citizen.verification_status === VerificationStatus.questions_verified 
-       && citizen.password
+        citizen.verification_status === VerificationStatus.questions_verified &&
+        citizen.password
       ) {
-        throw new ForbiddenException("تم التحقق من الرقم الوطني مسبقاً توجه لصفحة الدخول");
+        throw new ForbiddenException(
+          "تم التحقق من الرقم الوطني مسبقاً توجه لصفحة الدخول"
+        );
       }
 
       return {
@@ -304,18 +321,19 @@ export class AuthService {
     // Questions about spouse - National ID and Birth Date only
     if (spouse.length > 0) {
       const spouseData = spouse[0].relativePerson;
+
       if (spouseData) {
         // Spouse's national ID
         questions.push({
           key: `spouse_${spouseData.id}_nid`,
-          question: `ما هو الرقم الوطني لزوجك/زوجتك؟`,
+          question: `ما هو الرقم الوطني ${spouseData.sexCode === "أنثى" ? "لزوجتك" : "لزوجك"}؟ `,
         });
 
         // Spouse's birth date
         if (spouseData.birthDate) {
           questions.push({
             key: `spouse_${spouseData.id}_bd`,
-            question: `ما هو تاريخ ميلاد زوجك/زوجتك؟ (يوم/شهر/سنة)`,
+            question: `ما هو تاريخ ميلاد ${spouseData.sexCode === "أنثى" ? "لزوجتك" : "لزوجك"}؟ (يوم/شهر/سنة)`,
           });
         }
       }
@@ -436,15 +454,21 @@ export class AuthService {
   }
 
   async signIn(dto: SigninDto) {
-    const user = await this.prisma.user.findUnique({ where: { email: dto.email }, select: { ...baseUserSelect, password: true }});
-    if (!user) throw new UnauthorizedException('Invalid credentials');
+    const user = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+      select: { ...baseUserSelect, password: true },
+    });
+    if (!user) throw new UnauthorizedException("Invalid credentials");
     const isMatch = await bcrypt.compare(dto.password, user.password);
-    if (!isMatch) throw new UnauthorizedException('Invalid credentials');
+    if (!isMatch) throw new UnauthorizedException("Invalid credentials");
 
-    const token = await this.jwtService.signAsync({ sub: user.id, type: 'user', email: user.email, role: user.role });
+    const token = await this.jwtService.signAsync({
+      sub: user.id,
+      type: "user",
+      email: user.email,
+      role: user.role,
+    });
     const { password, ...safeUser } = user as any;
     return { access_token: token, user: safeUser };
   }
-
- 
 }
