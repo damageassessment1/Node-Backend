@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Post, Req } from "@nestjs/common";
 import { Request } from "express";
 import { AuthService } from "./auth.service";
-import { SigninDto } from "./dto";
+import { CitizenLoginDto, CompleteSignupDto, SigninDto, VerifyIdDto, VerifyQuestionsDto } from "./dto";
 import { Public } from "src/common/decorators/public-endpoint.decorator";
 
 @Controller("auth")
@@ -13,8 +13,8 @@ export class AuthController {
    */
   @Post("verify-id")
   @Public()
-  async verifyNationalId(@Body("national_id") nationalId: string) {
-    return this.authService.verifyNationalId(nationalId);
+  async verifyNationalId(@Body() dto:VerifyIdDto) {
+    return this.authService.verifyNationalId(dto.nationalId);
   }
   /**
    * Step 2: Verify Personal Questions
@@ -22,11 +22,11 @@ export class AuthController {
   @Post("verify-questions")
   @Public()
   async verifyQuestions(
-    @Body() body: { national_id: string; answers: Record<string, string> }
+    @Body() dto: VerifyQuestionsDto
   ) {
     return this.authService.verifySecurityQuestions(
-      body.national_id,
-      body.answers
+      dto.nationalId,
+      dto.answers
     );
   }
 
@@ -35,10 +35,10 @@ export class AuthController {
    */
   @Post("complete-signup")
   @Public()
-  async signup(@Body() body: { national_id: string; password: string }) {
+  async signup(@Body() dto: CompleteSignupDto) {
     return this.authService.completeCitizenSignup(
-      body.national_id,
-      body.password
+      dto.nationalId,
+      dto.password
     );
   }
 
@@ -47,8 +47,8 @@ export class AuthController {
    */
   @Post("citizen-login")
   @Public()
-  async citizenLogin(@Body() body: { national_id: string; password: string }) {
-    return this.authService.citizenLogin(body.national_id, body.password);
+  async citizenLogin(@Body() dto:CitizenLoginDto) {
+    return this.authService.citizenLogin(dto.nationalId, dto.password);
   }
 
   @Post("signin")

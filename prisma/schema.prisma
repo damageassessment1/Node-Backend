@@ -75,7 +75,7 @@ model Location {
 
 model Person {
   id               Int       @id @default(autoincrement())
-  national_id      Int       @unique @map("ci_id_num")
+  national_id      String       @unique @map("ci_id_num")
   firstName        String?   @map("ci_first_arb")
   fatherName       String?   @map("ci_father_arb")
   grandfatherName  String?   @map("ci_grand_father_arb")
@@ -102,9 +102,9 @@ model Person {
 
 model Relation {
   id               Int     @id @default(autoincrement())
-  personId         Int     @map("cf_id_num")
+  personId         String     @map("cf_id_num")
   relationCodeId   Int     @map("cf_relative_cd")
-  relativePersonId Int     @map("cf_id_relative")
+  relativePersonId String     @map("cf_id_relative")
 
   person           Person  @relation("PersonRelations", fields: [personId], references: [national_id])
   relationCode     Code    @relation(fields: [relationCodeId], references: [id])
@@ -143,8 +143,6 @@ model Application {
   @@index([citizenId])
   @@map("applications")
 }
-
-
 
 
 
