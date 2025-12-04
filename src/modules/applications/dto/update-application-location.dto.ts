@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsNumber } from "class-validator";
+import { IsOptional, IsString, IsNumber, IsNotEmpty } from "class-validator";
 
 export class UpdateApplicationLocationDto {
   @IsOptional()
@@ -33,3 +33,5 @@ export class UpdateApplicationLocationDto {
   @IsString()
   notes?: string;
 }
+
+

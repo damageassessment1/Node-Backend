@@ -1,6 +1,3 @@
-
-
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -54,6 +51,7 @@ model Citizen {
 model Location {
   id            Int          @id @default(autoincrement())
   citizenId     Int
+  applicationId String?         
   type          LocationType
   governorate   String?
   town          String?
@@ -65,7 +63,6 @@ model Location {
   notes         String?
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
-  applicationId Int?         @unique
   application   Application? @relation("ApplicationToLocation", fields: [applicationId], references: [id])
   citizen       Citizen      @relation(fields: [citizenId], references: [id])
 
@@ -126,18 +123,18 @@ model Code {
 
 
 model Application {
-  id               Int               @id @default(autoincrement())
+  id               String               @id @default(uuid())
   citizenId        Int
   // locationId removed; linkage is tracked on Location.applicationId instead
   application_date DateTime          @default(now())
   status           ApplicationStatus @default(pending)
   notes            String?
+  extraData        Json?
   createdById      Int? // User that created the application
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
-
   citizen   Citizen   @relation(fields: [citizenId], references: [id])
-  location  Location? @relation("ApplicationToLocation")
+  locations Location[] @relation("ApplicationToLocation")   // ← One-to-Many
   createdBy User?     @relation("UserCreatedApplications", fields: [createdById], references: [id])
 
   @@index([citizenId])
