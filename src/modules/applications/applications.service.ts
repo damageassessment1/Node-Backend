@@ -8,6 +8,9 @@ import { CreateApplicationDto } from "./dto/create-application.dto";
 import { UpdateApplicationDto } from "./dto/update-application.dto";
 import { applicationSelect } from "src/common/prisma/selects";
 import { UpdateApplicationLocationDto } from "./dto/update-application-location.dto";
+import { AddLocationDto } from "./dto/add-location.dto";
+import { AddExtraDataDto } from "./dto/add-extradata.dto";
+import { generateApplicationId } from "src/common/utils";
 
 @Injectable()
 export class ApplicationsService {
@@ -35,9 +38,13 @@ export class ApplicationsService {
         "Location does not belong to the specified citizen"
       );
 
+    // Generate custom application ID
+    const customId = generateApplicationId();
+
     // Create application and link location atomically
     const app = await this.prisma.application.create({
       data: {
+        id: customId,
         citizenId: dto.citizenId,
         application_date: dto.application_date ?? new Date(),
         status: dto.status ?? "pending",
@@ -46,7 +53,7 @@ export class ApplicationsService {
       },
     });
     // Link the created application to the location
-    const linkedLocation = await this.prisma.location.update({
+    await this.prisma.location.update({
       where: { id: dto.locationId },
       data: { applicationId: app.id },
     });
@@ -66,7 +73,7 @@ export class ApplicationsService {
     });
   }
 
-  async findOne(id: number, user: any) {
+  async findOne(id: string, user: any) {
     const app = await this.prisma.application.findUnique({
       where: { id },
       select: applicationSelect,
@@ -75,25 +82,17 @@ export class ApplicationsService {
     return app;
   }
 
-  async getLocationByApplication(id: number) {
+  async getLocationByApplication(id: string) {
     // Find location with applicationId = id
-    const location = await this.prisma.location.findUnique({
+    const location = await this.prisma.location.findMany({
       where: { applicationId: id },
     });
-    if (!location) {
-      // Try to find location by application relation (fallback)
-      const app = await this.prisma.application.findUnique({
-        where: { id },
-        include: { location: true },
-      });
-      if (app?.location) return app.location;
-      throw new NotFoundException("Location not found for application");
-    }
+    if (!location) throw new NotFoundException("Location not found for application");
     return location;
   }
 
   async updateLocationByApplication(
-    id: number,
+    id: string,
     dto: UpdateApplicationLocationDto,
     user: any
   ) {
@@ -104,7 +103,7 @@ export class ApplicationsService {
     // Only admin or supervisor update location via application
     if (user?.role !== "admin" && user?.role !== "supervisor")
       throw new ForbiddenException("Insufficient permissions");
-    const location = await this.prisma.location.findUnique({
+    const location = await this.prisma.location.findFirst({
       where: { applicationId: id },
     });
     if (!location)
@@ -116,7 +115,7 @@ export class ApplicationsService {
     return updated;
   }
 
-  async update(id: number, dto: UpdateApplicationDto, user: any) {
+  async update(id: string, dto: UpdateApplicationDto, user: any) {
     const app = await this.prisma.application.findUnique({
       where: { id },
     });
@@ -128,7 +127,7 @@ export class ApplicationsService {
 
     // If the locationId was changed, update location application mappings
     if (dto.locationId) {
-      const currentLocation = await this.prisma.location.findUnique({
+      const currentLocation = await this.prisma.location.findFirst({
         where: { applicationId: id },
       });
       if (currentLocation && dto.locationId !== currentLocation.id) {
@@ -169,7 +168,7 @@ export class ApplicationsService {
     return result;
   }
 
-  async remove(id: number, user: any) {
+  async remove(id: string, user: any) {
     const app = await this.prisma.application.findUnique({
       where: { id },
     });
@@ -179,7 +178,7 @@ export class ApplicationsService {
     if (user?.role !== "admin")
       throw new ForbiddenException("Insufficient permissions");
     // Clear location mapping before deleting the application
-    const currentLocation = await this.prisma.location.findUnique({
+    const currentLocation = await this.prisma.location.findFirst({
       where: { applicationId: id },
     });
     if (currentLocation) {
@@ -195,5 +194,41 @@ export class ApplicationsService {
       where: { id },
       select: applicationSelect,
     });
+  }
+
+  async addLocationToApplication(
+    applicationId: string,
+    dto: AddLocationDto,
+    type: "before_war" | "current",
+    user: any
+  ) {
+    const app = await this.prisma.application.findUnique({
+      where: { id: applicationId },
+    });
+    if (!app) throw new NotFoundException("Application not found");
+    // Create location for the citizen
+    const location = await this.prisma.location.create({
+      data: {
+        ...dto,
+        citizenId: app.citizenId,
+        type,
+        applicationId: app.id,
+      },
+    });
+    return location;
+  }
+
+  async addExtraData(applicationId: string, dto: AddExtraDataDto, user: any) {
+    const app = await this.prisma.application.findUnique({
+      where: { id: applicationId },
+    });
+    if (!app) throw new NotFoundException("Application not found");
+    if (user?.role !== "admin" && user?.role !== "supervisor")
+      throw new ForbiddenException("Insufficient permissions");
+    const updated = await this.prisma.application.update({
+      where: { id: applicationId },
+      data: { extraData: dto.extraData },
+    });
+    return updated;
   }
 }

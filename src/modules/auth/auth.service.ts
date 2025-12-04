@@ -12,6 +12,7 @@ import { SigninDto } from "./dto";
 import { baseUserSelect } from "src/common/prisma/selects";
 import { PrismaService } from "../database/prisma.service";
 import { VerificationStatus } from "@prisma/client";
+import { generateApplicationId } from "src/common/utils";
 
 export interface VerificationQuestion {
   key: string;
@@ -54,7 +55,7 @@ export class AuthService {
 
     // Build verification questions
     const allQuestions = this.buildVerificationQuestions(person);
-    
+
     if (allQuestions.length === 0) {
       throw new HttpException(
         "بيانات غير كافية لتوليد أسئلة التحقق",
@@ -143,17 +144,24 @@ export class AuthService {
       },
     });
 
-    const { password:secret,...safeCitizen} = updated;
+    
+    const application = await this.prisma.application.create({
+      data: { id: generateApplicationId(), citizenId: updated.id },
+    });
+
+    const { password: secret, ...safeCitizen } = updated;
 
     const token = this.jwtService.sign({
-      id: updated.id,
+      sub: updated.id,
       national_id: updated.national_id,
+      type: "citizen",
     });
 
     return {
       success: true,
       message: "تم إكمال التسجيل بنجاح",
-      user:safeCitizen,
+      user: safeCitizen,
+      application,
       token,
     };
   }
@@ -181,12 +189,12 @@ export class AuthService {
 
     // 4. Generate token
     const token = this.jwtService.sign({
-      id: citizen.id,
+      sub: citizen.id,
       national_id: citizen.national_id,
+      type: "citizen",
     });
 
-    const { password:secret,...safeCitizen} = citizen;
-
+    const { password: secret, ...safeCitizen } = citizen;
 
     return {
       success: true,

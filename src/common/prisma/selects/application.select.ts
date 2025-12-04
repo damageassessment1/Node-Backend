@@ -1,10 +1,10 @@
 export const applicationSelect = {
   id: true,
   citizenId: true,
-  // locationId removed from Application model (use Location.applicationId)
   application_date: true,
   status: true,
   notes: true,
+  extraData: true, // Include extraData field
   createdById: true,
   createdAt: true,
   updatedAt: true,
@@ -16,7 +16,7 @@ export const applicationSelect = {
       family_name: true,
     },
   },
-  location: {
+  locations: { // Fix: should be plural and match schema
     select: {
       id: true,
       type: true,
@@ -25,6 +25,9 @@ export const applicationSelect = {
       street: true,
       block_number: true,
       house_number: true,
+      latitude: true,
+      longitude: true,
+      notes: true,
     },
   },
   createdBy: {
