@@ -1,6 +1,6 @@
-import { IsNotEmpty } from "class-validator";
+import { IsJSON, IsNotEmpty } from "class-validator";
 
 export class AddExtraDataDto{
-    @IsNotEmpty()
+    @IsJSON()
     extraData: string;
 }

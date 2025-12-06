@@ -11,6 +11,7 @@ import { UpdateApplicationLocationDto } from "./dto/update-application-location.
 import { AddLocationDto } from "./dto/add-location.dto";
 import { AddExtraDataDto } from "./dto/add-extradata.dto";
 import { generateApplicationId } from "src/common/utils";
+import { Citizen, LocationType } from "@prisma/client";
 
 @Injectable()
 export class ApplicationsService {
@@ -87,7 +88,8 @@ export class ApplicationsService {
     const location = await this.prisma.location.findMany({
       where: { applicationId: id },
     });
-    if (!location) throw new NotFoundException("Location not found for application");
+    if (!location)
+      throw new NotFoundException("Location not found for application");
     return location;
   }
 
@@ -197,15 +199,22 @@ export class ApplicationsService {
   }
 
   async addLocationToApplication(
-    applicationId: string,
     dto: AddLocationDto,
-    type: "before_war" | "current",
-    user: any
+    type: LocationType,
+    user: Citizen
   ) {
-    const app = await this.prisma.application.findUnique({
-      where: { id: applicationId },
+    const app = await this.prisma.application.findFirst({
+      where: { citizenId: user.id },
+      include: { locations: true },
     });
+
     if (!app) throw new NotFoundException("Application not found");
+
+    if (app.locations.some((loc) => loc.type === type)) {
+      throw new ForbiddenException(
+        `Application already has a ${type} location`
+      );
+    }
     // Create location for the citizen
     const location = await this.prisma.location.create({
       data: {
@@ -218,17 +227,36 @@ export class ApplicationsService {
     return location;
   }
 
-  async addExtraData(applicationId: string, dto: AddExtraDataDto, user: any) {
-    const app = await this.prisma.application.findUnique({
-      where: { id: applicationId },
+  async addExtraData(dto: AddExtraDataDto, user: Citizen) {
+  const app = await this.prisma.application.findFirst({
+    where: { citizenId: user.id },
+  });
+
+  if (!app) throw new NotFoundException("Application not found");
+
+  const updated = await this.prisma.application.update({
+    where: { id: app.id }, // 👈 unique field
+    data: { extraData: dto.extraData },
+  });
+
+  return updated;
+}
+
+  async getMyApplicationInfo(user: Citizen) {
+    const app = await this.prisma.application.findFirst({
+      where: { citizenId: user.id },
+      select: applicationSelect,
     });
     if (!app) throw new NotFoundException("Application not found");
-    if (user?.role !== "admin" && user?.role !== "supervisor")
-      throw new ForbiddenException("Insufficient permissions");
-    const updated = await this.prisma.application.update({
-      where: { id: applicationId },
-      data: { extraData: dto.extraData },
-    });
-    return updated;
+    if (app.extraData && typeof app.extraData === "string") {
+      try {
+        app.extraData = JSON.parse(app.extraData);
+      } catch {
+        // If parsing fails, leave as is
+        console.log("Failed to parse extraData JSON");
+        
+      }
+    }
+    return app;
   }
 }
