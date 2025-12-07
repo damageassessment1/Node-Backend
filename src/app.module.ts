@@ -9,7 +9,7 @@ import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
 import { ScheduleModule } from "@nestjs/schedule";
 import { HttpModule } from "@nestjs/axios";
-import { KeepAliveService } from "./keep-alive.service";
+// import { KeepAliveService } from "./keep-alive.service";
 
 @Module({
   imports: [
@@ -22,7 +22,7 @@ import { KeepAliveService } from "./keep-alive.service";
     ApplicationsModule,
     LocationsModule,
   ],
-  providers: [AppService, KeepAliveService],
+  providers: [AppService],
   controllers: [AppController],
 })
 export class AppModule {}

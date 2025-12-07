@@ -16,6 +16,8 @@ import { User } from "src/common/decorators/user.decorator";
 import { UpdateApplicationLocationDto } from "./dto/update-application-location.dto";
 import { AddLocationDto } from "./dto/add-location.dto";
 import { AddExtraDataDto } from "./dto/add-extradata.dto";
+import { Citizen as CitizenType, LocationType } from "@prisma/client";
+import { Citizen } from "src/common/decorators/citizen.decorator";
 
 @Controller("applications")
 export class ApplicationsController {
@@ -33,17 +35,57 @@ export class ApplicationsController {
     return this.service.findAll(user);
   }
 
+  @Get("/my-application")
+  async getMyApplicationInfo(@Citizen() user: CitizenType) {
+    return this.service.getMyApplicationInfo(user);
+  }
+
+  // Add previous location to application
+  @Post("/add-previous-location")
+  async addPreviousLocation(
+    @Body() dto: AddLocationDto,
+    @Citizen() user: CitizenType
+  ) {
+    return this.service.addLocationToApplication(
+      dto,
+      LocationType.before_war,
+      user
+    );
+  }
+
+  // Add current location to application
+  @Post("/add-current-location")
+  async addCurrentLocation(
+    @Body() dto: AddLocationDto,
+    @Citizen() user: CitizenType
+  ) {
+    return this.service.addLocationToApplication(
+      dto,
+      LocationType.current,
+      user
+    );
+  }
+
+  // Add extra data (damage/building details) to application
+  @Post("/add-extra-data")
+  async addExtraData(
+    @Body() dto: AddExtraDataDto,
+    @Citizen() user: CitizenType
+  ) {
+    return this.service.addExtraData(dto, user);
+  }
+
   @Get(":id")
   @UseGuards(RolesGuard("admin", "supervisor"))
   async findOne(@Param("id") id: string, @User() user: any) {
     return this.service.findOne(id, user);
   }
 
-  @Get(":id/location")
-  @UseGuards(RolesGuard("admin", "supervisor"))
-  async getLocation(@Param("id") id: string) {
-    return this.service.getLocationByApplication(id);
-  }
+  // @Get(":id/location")
+  // @UseGuards(RolesGuard("admin", "supervisor"))
+  // async getLocation(@Param("id") id: string) {
+  //   return this.service.getLocationByApplication(id);
+  // }
 
   @Patch(":id")
   @UseGuards(RolesGuard("admin", "supervisor"))
@@ -61,43 +103,13 @@ export class ApplicationsController {
     return this.service.remove(id, user);
   }
 
-  @Patch(":id/location")
-  @UseGuards(RolesGuard("admin", "supervisor"))
-  async updateLocation(
-    @Param("id") id: string,
-    @Body() dto: UpdateApplicationLocationDto,
-    @User() user: any
-  ) {
-    return this.service.updateLocationByApplication(id, dto, user);
-  }
-
-  // Add previous location to application
-  @Patch(":id/add-previous-location")
-  async addPreviousLocation(
-    @Param("id") id: string,
-    @Body() dto: AddLocationDto,
-    @User() user: any
-  ) {
-    return this.service.addLocationToApplication(id, dto, "before_war", user);
-  }
-
-  // Add current location to application
-  @Patch(":id/add-current-location")
-  async addCurrentLocation(
-    @Param("id") id: string,
-    @Body() dto: AddLocationDto,
-    @User() user: any
-  ) {
-    return this.service.addLocationToApplication(id, dto, "current", user);
-  }
-
-  // Add extra data (damage/building details) to application
-  @Patch(":id/extra-data")
-  async addExtraData(
-    @Param("id") id: string,
-    @Body() dto: AddExtraDataDto,
-    @User() user: any
-  ) {
-    return this.service.addExtraData(id, dto, user);
-  }
+  // @Patch(":id/location")
+  // @UseGuards(RolesGuard("admin", "supervisor"))
+  // async updateLocation(
+  //   @Param("id") id: string,
+  //   @Body() dto: UpdateApplicationLocationDto,
+  //   @User() user: any
+  // ) {
+  //   return this.service.updateLocationByApplication(id, dto, user);
+  // }
 }

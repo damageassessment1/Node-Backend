@@ -128,6 +128,12 @@ export class AuthService {
       throw new UnauthorizedException("المواطن غير موجود");
     }
 
+    if (citizen.password) {
+      throw new ConflictException(
+        "تم إكمال التسجيل مسبقاً. يرجى تسجيل الدخول."
+      );
+    }
+
     if (
       citizen.verification_status !== VerificationStatus.national_id_verified
     ) {
@@ -144,12 +150,12 @@ export class AuthService {
       },
     });
 
-    
     const application = await this.prisma.application.create({
       data: { id: generateApplicationId(), citizenId: updated.id },
     });
 
-    const { password: secret, ...safeCitizen } = updated;
+    const { password: _, ...safeCitizen } = updated;
+    const user = { ...safeCitizen, application: { ...application } };
 
     const token = this.jwtService.sign({
       sub: updated.id,
@@ -160,8 +166,7 @@ export class AuthService {
     return {
       success: true,
       message: "تم إكمال التسجيل بنجاح",
-      user: safeCitizen,
-      application,
+      user,
       token,
     };
   }
@@ -170,6 +175,7 @@ export class AuthService {
     // 1. Find citizen
     const citizen = await this.prisma.citizen.findUnique({
       where: { national_id },
+      include: { applications: true },
     });
 
     if (!citizen) {
@@ -194,12 +200,14 @@ export class AuthService {
       type: "citizen",
     });
 
-    const { password: secret, ...safeCitizen } = citizen;
+    // Remove password and send user object with application
+    const { password: _, applications, ...safeCitizen } = citizen;
+    const user = { ...safeCitizen, application: citizen.applications[0] };
 
     return {
       success: true,
       message: "تم تسجيل الدخول بنجاح",
-      user: safeCitizen,
+      user,
       token,
     };
   }

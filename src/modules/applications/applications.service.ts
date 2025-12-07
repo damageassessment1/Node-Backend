@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  ConflictException,
 } from "@nestjs/common";
 import { PrismaService } from "../database/prisma.service";
 import { CreateApplicationDto } from "./dto/create-application.dto";
@@ -11,6 +12,7 @@ import { UpdateApplicationLocationDto } from "./dto/update-application-location.
 import { AddLocationDto } from "./dto/add-location.dto";
 import { AddExtraDataDto } from "./dto/add-extradata.dto";
 import { generateApplicationId } from "src/common/utils";
+import { Citizen, LocationType } from "@prisma/client";
 
 @Injectable()
 export class ApplicationsService {
@@ -21,27 +23,25 @@ export class ApplicationsService {
     if (user?.role !== "admin")
       throw new ForbiddenException("Insufficient permissions");
 
-    // Verify citizen & location exist
+    // Verify citizen exists
     const citizen = await this.prisma.citizen.findUnique({
       where: { id: dto.citizenId },
     });
     if (!citizen) throw new NotFoundException("Citizen not found");
-    const location = await this.prisma.location.findUnique({
-      where: { id: dto.locationId },
+
+    // Check if citizen already has an application
+    const existingApplication = await this.prisma.application.findUnique({
+      where: { citizenId: dto.citizenId },
     });
-    if (!location) throw new NotFoundException("Location not found");
-    if (location.applicationId)
-      throw new ForbiddenException("Location already linked to an application");
-    // Ensure the location belongs to the specified citizen
-    if (location.citizenId !== dto.citizenId)
-      throw new ForbiddenException(
-        "Location does not belong to the specified citizen"
+    if (existingApplication)
+      throw new ConflictException(
+        "An application has already been created for this citizen"
       );
 
     // Generate custom application ID
     const customId = generateApplicationId();
 
-    // Create application and link location atomically
+    // Create application without requiring a location
     const app = await this.prisma.application.create({
       data: {
         id: customId,
@@ -52,12 +52,29 @@ export class ApplicationsService {
         createdById: user?.id ?? null,
       },
     });
-    // Link the created application to the location
-    await this.prisma.location.update({
-      where: { id: dto.locationId },
-      data: { applicationId: app.id },
-    });
-    // Return application with linked location
+
+    // // If locationId provided, link it to the application
+    // if (dto.locationId) {
+    //   const location = await this.prisma.location.findUnique({
+    //     where: { id: dto.locationId },
+    //   });
+    //   if (!location) throw new NotFoundException("Location not found");
+    //   if (location.applicationId)
+    //     throw new ForbiddenException("Location already linked to an application");
+    //   // Ensure the location belongs to the specified citizen
+    //   if (location.citizenId !== dto.citizenId)
+    //     throw new ForbiddenException(
+    //       "Location does not belong to the specified citizen"
+    //     );
+
+    //   // Link location to application
+    //   await this.prisma.location.update({
+    //     where: { id: dto.locationId },
+    //     data: { applicationId: app.id },
+    //   });
+    // }
+
+    // Return application with all details
     const result = await this.prisma.application.findUnique({
       where: { id: app.id },
       select: applicationSelect,
@@ -87,7 +104,8 @@ export class ApplicationsService {
     const location = await this.prisma.location.findMany({
       where: { applicationId: id },
     });
-    if (!location) throw new NotFoundException("Location not found for application");
+    if (!location)
+      throw new NotFoundException("Location not found for application");
     return location;
   }
 
@@ -197,15 +215,22 @@ export class ApplicationsService {
   }
 
   async addLocationToApplication(
-    applicationId: string,
     dto: AddLocationDto,
-    type: "before_war" | "current",
-    user: any
+    type: LocationType,
+    user: Citizen
   ) {
-    const app = await this.prisma.application.findUnique({
-      where: { id: applicationId },
+    const app = await this.prisma.application.findFirst({
+      where: { citizenId: user.id },
+      include: { locations: true },
     });
+
     if (!app) throw new NotFoundException("Application not found");
+
+    if (app.locations.some((loc) => loc.type === type)) {
+      throw new ForbiddenException(
+        `Application already has a ${type} location`
+      );
+    }
     // Create location for the citizen
     const location = await this.prisma.location.create({
       data: {
@@ -218,17 +243,35 @@ export class ApplicationsService {
     return location;
   }
 
-  async addExtraData(applicationId: string, dto: AddExtraDataDto, user: any) {
-    const app = await this.prisma.application.findUnique({
-      where: { id: applicationId },
+  async addExtraData(dto: AddExtraDataDto, user: Citizen) {
+    const app = await this.prisma.application.findFirst({
+      where: { citizenId: user.id },
     });
+
     if (!app) throw new NotFoundException("Application not found");
-    if (user?.role !== "admin" && user?.role !== "supervisor")
-      throw new ForbiddenException("Insufficient permissions");
+
     const updated = await this.prisma.application.update({
-      where: { id: applicationId },
+      where: { id: app.id },
       data: { extraData: dto.extraData },
     });
+
     return updated;
+  }
+
+  async getMyApplicationInfo(user: Citizen) {
+    const app = await this.prisma.application.findFirst({
+      where: { citizenId: user.id },
+      select: applicationSelect,
+    });
+    if (!app) throw new NotFoundException("Application not found");
+    if (app.extraData && typeof app.extraData === "string") {
+      try {
+        app.extraData = JSON.parse(app.extraData);
+      } catch {
+        // If parsing fails, leave as is
+        console.log("Failed to parse extraData JSON");
+      }
+    }
+    return app;
   }
 }
