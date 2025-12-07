@@ -1,17 +1,13 @@
-import {
-  IsInt,
-  IsOptional,
-  IsEnum,
-  IsString,
-} from "class-validator";
+import { IsInt, IsOptional, IsEnum, IsString } from "class-validator";
 // Use string union for ApplicationStatus rather than importing from Prisma client (pre-generator)
 
 export class CreateApplicationDto {
   @IsInt()
   citizenId: number;
 
-  @IsInt()
-  locationId: number;
+  // @IsOptional()
+  // @IsInt()
+  // locationId?: number;
 
   @IsOptional()
   application_date?: Date;

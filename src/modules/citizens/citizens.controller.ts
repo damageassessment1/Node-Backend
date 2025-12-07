@@ -70,6 +70,4 @@ export class CitizensController {
   ) {
     return this.svc.createLocation(id, dto);
   }
-
-  // Assignment of supervisors is handled by admin user service or UI logic; no direct route provided here
 }
