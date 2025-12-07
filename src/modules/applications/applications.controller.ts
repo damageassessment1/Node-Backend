@@ -40,7 +40,7 @@ export class ApplicationsController {
     return this.service.getMyApplicationInfo(user);
   }
 
-    // Add previous location to application
+  // Add previous location to application
   @Post("/add-previous-location")
   async addPreviousLocation(
     @Body() dto: AddLocationDto,
@@ -81,11 +81,11 @@ export class ApplicationsController {
     return this.service.findOne(id, user);
   }
 
-  @Get(":id/location")
-  @UseGuards(RolesGuard("admin", "supervisor"))
-  async getLocation(@Param("id") id: string) {
-    return this.service.getLocationByApplication(id);
-  }
+  // @Get(":id/location")
+  // @UseGuards(RolesGuard("admin", "supervisor"))
+  // async getLocation(@Param("id") id: string) {
+  //   return this.service.getLocationByApplication(id);
+  // }
 
   @Patch(":id")
   @UseGuards(RolesGuard("admin", "supervisor"))
@@ -103,14 +103,13 @@ export class ApplicationsController {
     return this.service.remove(id, user);
   }
 
-  @Patch(":id/location")
-  @UseGuards(RolesGuard("admin", "supervisor"))
-  async updateLocation(
-    @Param("id") id: string,
-    @Body() dto: UpdateApplicationLocationDto,
-    @User() user: any
-  ) {
-    return this.service.updateLocationByApplication(id, dto, user);
-  }
-
+  // @Patch(":id/location")
+  // @UseGuards(RolesGuard("admin", "supervisor"))
+  // async updateLocation(
+  //   @Param("id") id: string,
+  //   @Body() dto: UpdateApplicationLocationDto,
+  //   @User() user: any
+  // ) {
+  //   return this.service.updateLocationByApplication(id, dto, user);
+  // }
 }

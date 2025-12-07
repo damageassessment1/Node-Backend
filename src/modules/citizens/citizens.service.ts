@@ -3,7 +3,7 @@ import {
   NotFoundException,
   ForbiddenException,
 } from "@nestjs/common";
-import { citizenSelect, applicationSelect } from "src/common/prisma/selects";
+import { citizenSelect, locationSelect } from "src/common/prisma/selects";
 import { PrismaService } from "../database/prisma.service";
 import { CreateCitizenDto } from "./dto/create-citizen.dto";
 import { CreateLocationDto } from "./dto/create-location.dto";
@@ -55,19 +55,7 @@ export class CitizensService {
         notes: dto.notes ?? null,
       },
       select: {
-        id: true,
-        type: true,
-        governorate: true,
-        town: true,
-        street: true,
-        block_number: true,
-        house_number: true,
-        applicationId: true,
-        latitude: true,
-        longitude: true,
-        notes: true,
-        createdAt: true,
-        updatedAt: true,
+        ...locationSelect,
       },
     });
     return loc;

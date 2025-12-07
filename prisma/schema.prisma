@@ -137,6 +137,7 @@ model Application {
   locations Location[] @relation("ApplicationToLocation")   // ← One-to-Many
   createdBy User?     @relation("UserCreatedApplications", fields: [createdById], references: [id])
 
+  @@unique([citizenId])
   @@index([citizenId])
   @@map("applications")
 }

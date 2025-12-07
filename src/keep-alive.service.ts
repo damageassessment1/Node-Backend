@@ -1,7 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
-import { HttpService } from '@nestjs/axios';
-import { firstValueFrom } from 'rxjs';
+import { Injectable, Logger } from "@nestjs/common";
+import { Cron, CronExpression } from "@nestjs/schedule";
+import { HttpService } from "@nestjs/axios";
+import { firstValueFrom } from "rxjs";
 
 @Injectable()
 export class KeepAliveService {
@@ -12,7 +12,7 @@ export class KeepAliveService {
   // Runs every 10 minutes
   @Cron(CronExpression.EVERY_10_MINUTES)
   async pingServer() {
-    const url = `https://backend-5549.onrender.com/keep-alive`; 
+    const url = `https://backend-5549.onrender.com/keep-alive`;
     try {
       const res = await firstValueFrom(this.http.get(url));
       this.logger.log(`Pinged ${url}, data: ${res.data.data}`);

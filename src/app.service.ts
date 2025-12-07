@@ -15,14 +15,16 @@ export class AppService {
   async getAdminData(user: User) {
     const [supervisors, citizens, totalCitizens] = await Promise.all([
       this.prisma.user.findMany({
-        where: { role: 'supervisor' },
+        where: { role: "supervisor" },
         select: {
           ...baseUserSelect,
         },
       }),
-        this.prisma.citizen.findMany({ select: citizenSelect, orderBy: { createdAt: 'desc' } }),
+      this.prisma.citizen.findMany({
+        select: citizenSelect,
+        orderBy: { createdAt: "desc" },
+      }),
       this.prisma.citizen.count(),
-      // Supervisor assignments removed - supervision is role-based only
     ]);
 
     return {
@@ -33,7 +35,9 @@ export class AppService {
         totalSupervisors: supervisors.length,
         assignedCitizens: 0,
         unassignedCitizens: citizens.length,
-        verifiedCitizens: citizens.filter(c => c.verification_status === 'verified').length,
+        verifiedCitizens: citizens.filter(
+          (c) => c.verification_status === "verified"
+        ).length,
       },
     };
   }
@@ -44,11 +48,17 @@ export class AppService {
    */
   async getSupervisorData(user: User) {
     // Supervisors can read all citizens (no per-supervisor assignment)
-    const assignedCitizens = await this.prisma.citizen.findMany({ select: citizenSelect, orderBy: { createdAt: 'desc' }, });
-    const stats = assignedCitizens.reduce((acc, c) => {
-      acc[c.verification_status] = (acc[c.verification_status] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const assignedCitizens = await this.prisma.citizen.findMany({
+      select: citizenSelect,
+      orderBy: { createdAt: "desc" },
+    });
+    const stats = assignedCitizens.reduce(
+      (acc, c) => {
+        acc[c.verification_status] = (acc[c.verification_status] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
 
     return {
       assignedCitizens,

@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString } from "class-validator";
 
 export class CreateCitizenDto {
   @IsNotEmpty()
@@ -16,6 +16,4 @@ export class CreateCitizenDto {
   @IsOptional()
   @IsString()
   password?: string;
-
-  // supervisorId intentionally removed. Supervision handled via users (role=supervisor)
 }
