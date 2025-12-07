@@ -152,6 +152,7 @@ export class AuthService {
 
     const application = await this.prisma.application.create({
       data: { id: generateApplicationId(), citizenId: updated.id },
+      include:{locations:true}
     });
 
     const { password: _, ...safeCitizen } = updated;
@@ -175,7 +176,7 @@ export class AuthService {
     // 1. Find citizen
     const citizen = await this.prisma.citizen.findUnique({
       where: { national_id },
-      include: { applications: true },
+      include: { applications: {include:{locations:true}} },
     });
 
     if (!citizen) {
