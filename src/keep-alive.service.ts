@@ -10,7 +10,7 @@ export class KeepAliveService {
   constructor(private readonly http: HttpService) {}
 
   // Runs every 10 minutes
-  @Cron(CronExpression.EVERY_MINUTE)
+  @Cron(CronExpression.EVERY_5_MINUTES)
   async pingServer() {
     const url = `https://backend-6adn.onrender.com/keep-alive`;
     const frontUrl = "https://gazadamageassessments.onrender.com";
