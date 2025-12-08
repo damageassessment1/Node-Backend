@@ -68,4 +68,17 @@ export class AppService {
       },
     };
   }
+
+
+  async findApplicationById(id: string) {
+    const application = await this.prisma.application.findUnique({
+      where: { id },
+    });
+
+    if (!application) {
+      throw new Error("الطلب غير موجود");
+    }
+
+    return application;
+  }
 }

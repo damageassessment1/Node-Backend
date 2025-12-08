@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards } from "@nestjs/common";
+import { Controller, Get, Param, UseGuards } from "@nestjs/common";
 import { User } from "./common/decorators/user.decorator";
 import { AppService } from "./app.service";
 import { RolesGuard } from "./common/guards/roles.guard";
@@ -23,5 +23,11 @@ export class AppController {
   @Public()
   keepAlive() {
     return "Server is running";
+  }
+
+  @Get("/track-application/:id")
+  @Public()
+  async findApplicationById(@Param("id") id: string) {
+    return this.service.findApplicationById(id);
   }
 }
