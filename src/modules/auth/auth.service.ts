@@ -120,7 +120,6 @@ export class AuthService {
   }
 
   async completeCitizenSignup(dto: CompleteSignupDto) {
-
     const citizen = await this.prisma.citizen.findUnique({
       where: { national_id: dto.nationalId },
     });
@@ -152,13 +151,15 @@ export class AuthService {
         grandfather_name: dto.fatherName,
         family_name: dto.familyName,
         phone_number: dto.phoneNumber,
+        email: dto.email,
+        whatsapp_number: dto.whatsappNumber,
         verification_status: VerificationStatus.questions_verified,
       },
     });
 
     const application = await this.prisma.application.create({
       data: { id: generateApplicationId(), citizenId: updated.id },
-      include:{locations:true}
+      include: { locations: true },
     });
 
     const { password: _, ...safeCitizen } = updated;
@@ -182,7 +183,7 @@ export class AuthService {
     // 1. Find citizen
     const citizen = await this.prisma.citizen.findUnique({
       where: { national_id },
-      include: { applications: {include:{locations:true}} },
+      include: { applications: { include: { locations: true } } },
     });
 
     if (!citizen) {

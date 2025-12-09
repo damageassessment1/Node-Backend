@@ -36,6 +36,14 @@ export class CompleteSignupDto {
   @IsNotEmpty({message:"اسم العائلة مطلوب"})
   familyName: string;
 
+  @IsString({message:"البريد الإلكتروني يجب أن يكون نص"})
+  @IsNotEmpty({message:"البريد الإلكتروني مطلوب"})
+  email: string;
+
+  @IsNumberString({},{message:"رقم الواتساب يجب أن يكون رقم"})
+  @IsNotEmpty({message:"رقم الواتساب مطلوب"})
+  whatsappNumber: string;
+
   @IsNumberString({}, {message:"رقم الهاتف يجب أن يكون رقم"})
   @IsNotEmpty({message:"رقم الهاتف مطلوب"})
   phoneNumber: string;
