@@ -40,7 +40,7 @@ export class AuthController {
   @Post("complete-signup")
   @Public()
   async signup(@Body() dto: CompleteSignupDto) {
-    return this.authService.completeCitizenSignup(dto.nationalId, dto.password);
+    return this.authService.completeCitizenSignup(dto);
   }
 
   /**

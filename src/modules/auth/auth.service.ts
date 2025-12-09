@@ -8,7 +8,7 @@ import {
 } from "@nestjs/common";
 import * as bcrypt from "bcryptjs";
 import { JwtService } from "@nestjs/jwt";
-import { SigninDto } from "./dto";
+import { CompleteSignupDto, SigninDto } from "./dto";
 import { baseUserSelect } from "src/common/prisma/selects";
 import { PrismaService } from "../database/prisma.service";
 import { VerificationStatus } from "@prisma/client";
@@ -119,9 +119,10 @@ export class AuthService {
     };
   }
 
-  async completeCitizenSignup(national_id: string, password: string) {
+  async completeCitizenSignup(dto: CompleteSignupDto) {
+
     const citizen = await this.prisma.citizen.findUnique({
-      where: { national_id },
+      where: { national_id: dto.nationalId },
     });
 
     if (!citizen) {
@@ -140,12 +141,17 @@ export class AuthService {
       throw new ForbiddenException("يجب إكمال التحقق من الهوية قبل التسجيل");
     }
 
-    const hashed = await bcrypt.hash(password, 10);
+    const hashed = await bcrypt.hash(dto.password, 10);
 
     const updated = await this.prisma.citizen.update({
-      where: { national_id },
+      where: { national_id: dto.nationalId },
       data: {
         password: hashed,
+        first_name: dto.firstName,
+        father_name: dto.fatherName,
+        grandfather_name: dto.fatherName,
+        family_name: dto.familyName,
+        phone_number: dto.phoneNumber,
         verification_status: VerificationStatus.questions_verified,
       },
     });
