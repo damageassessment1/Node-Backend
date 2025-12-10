@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Res,
   UseGuards,
 } from "@nestjs/common";
 import { ApplicationsService } from "./applications.service";
@@ -13,11 +14,11 @@ import { CreateApplicationDto } from "./dto/create-application.dto";
 import { UpdateApplicationDto } from "./dto/update-application.dto";
 import { RolesGuard } from "src/common/guards/roles.guard";
 import { User } from "src/common/decorators/user.decorator";
-import { UpdateApplicationLocationDto } from "./dto/update-application-location.dto";
 import { AddLocationDto } from "./dto/add-location.dto";
 import { AddExtraDataDto } from "./dto/add-extradata.dto";
 import { Citizen as CitizenType, LocationType } from "@prisma/client";
 import { Citizen } from "src/common/decorators/citizen.decorator";
+import { Response } from "express";
 
 @Controller("applications")
 export class ApplicationsController {
@@ -73,6 +74,12 @@ export class ApplicationsController {
     @Citizen() user: CitizenType
   ) {
     return this.service.addExtraData(dto, user);
+  }
+
+  @Get("export-applications")
+  @UseGuards(RolesGuard("admin"))
+  async exportApplications(@Res() res: Response) {
+    await this.service.exportApplications(res);
   }
 
   @Get(":id")

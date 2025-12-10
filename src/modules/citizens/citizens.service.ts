@@ -10,7 +10,8 @@ import { CreateLocationDto } from "./dto/create-location.dto";
 import { UpdateCitizenDto } from "./dto/update-citizen.dto";
 import * as bcrypt from "bcryptjs";
 import { v4 as uuidv4 } from "uuid";
-
+import * as ExcelJS from "exceljs";
+import { Response } from "express";
 @Injectable()
 export class CitizensService {
   constructor(private prisma: PrismaService) {}
@@ -113,4 +114,42 @@ export class CitizensService {
   }
 
   // assignSupervisor functionality removed - supervision is determined by users' role and external admin workflows
+
+  async exportCitizens(res: Response) {
+    const citizens = await this.prisma.citizen.findMany({});
+
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet("citizens");
+
+    sheet.columns = [
+      { header: "citizen ID", key: "id", width: 30 },
+      { header: "Citizen Name", key: "name", width: 30 },
+      { header: "Citizen Email", key: "email", width: 30 },
+      { header: "Citizen Phone Number", key: "phone", width: 30 },
+      { header: "Citizen Gender", key: "gender", width: 30 },
+      { header: "Citizen Status", key: "status", width: 30 },
+      { header: "Created At", key: "createdAt", width: 20 },
+    ];
+
+    citizens.forEach((u) => {
+      sheet.addRow({
+        id: u.national_id,
+        name: u.full_name,
+        email: u.email,
+        phone: u.phone_number,
+        gender: u.gender,
+        status: u.status,
+        createdAt: u.createdAt.toLocaleString(),
+      });
+    });
+
+    res.setHeader(
+      "Content-Type",
+      "citizen/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader("Content-Disposition", "attachment; filename=citizens.xlsx");
+
+    await workbook.xlsx.write(res);
+    res.end();
+  }
 }

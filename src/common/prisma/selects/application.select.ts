@@ -13,7 +13,15 @@ export const applicationSelect = {
       id: true,
       national_id: true,
       first_name: true,
+      father_name: true,
+      grandfather_name: true,
       family_name: true,
+      phone_number: true,
+      whatsapp_number: true,
+      email: true,
+      verification_status: true,
+      status: true,
+      full_name: true,
     },
   },
   locations: { // Fix: should be plural and match schema
@@ -28,13 +36,6 @@ export const applicationSelect = {
       latitude: true,
       longitude: true,
       notes: true,
-    },
-  },
-  createdBy: {
-    select: {
-      id: true,
-      name: true,
-      email: true,
     },
   },
 } as const;

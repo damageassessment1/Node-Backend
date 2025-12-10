@@ -13,6 +13,8 @@ import { AddLocationDto } from "./dto/add-location.dto";
 import { AddExtraDataDto } from "./dto/add-extradata.dto";
 import { generateApplicationId } from "src/common/utils";
 import { Citizen, LocationType } from "@prisma/client";
+import * as ExcelJS from "exceljs";
+import { Response } from "express";
 
 @Injectable()
 export class ApplicationsService {
@@ -273,5 +275,44 @@ export class ApplicationsService {
       }
     }
     return app;
+  }
+
+  async exportApplications(res: Response) {
+    const applications = await this.prisma.application.findMany({
+      include: { citizen: true },
+    });
+
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet("Applications");
+
+    sheet.columns = [
+      { header: "Application ID", key: "id", width: 30 },
+      { header: "Citizen Name", key: "name", width: 30 },
+      { header: "Citizen Email", key: "email", width: 30 },
+      { header: "Citizen Phone Number", key: "phone", width: 30 },
+      { header: "Created At", key: "createdAt", width: 20 },
+    ];
+
+    applications.forEach((u) => {
+      sheet.addRow({
+        id: u.id,
+        name: u.citizen.full_name,
+        email: u.citizen.email,
+        phone: u.citizen.phone_number,
+        createdAt: u.createdAt.toLocaleString(),
+      });
+    });
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=applications.xlsx"
+    );
+
+    await workbook.xlsx.write(res);
+    res.end();
   }
 }

@@ -150,6 +150,7 @@ export class AuthService {
         father_name: dto.fatherName,
         grandfather_name: dto.fatherName,
         family_name: dto.familyName,
+        full_name: `${dto.firstName} ${dto.fatherName} ${dto.grandfatherName} ${dto.familyName}`,
         phone_number: dto.phoneNumber,
         email: dto.email,
         whatsapp_number: dto.whatsappNumber,

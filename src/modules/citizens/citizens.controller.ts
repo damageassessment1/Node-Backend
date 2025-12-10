@@ -9,6 +9,7 @@ import {
   Patch,
   Delete,
   Query,
+  Res,
 } from "@nestjs/common";
 import { CitizensService } from "./citizens.service";
 import { CreateCitizenDto } from "./dto/create-citizen.dto";
@@ -17,7 +18,7 @@ import { RolesGuard } from "src/common/guards/roles.guard";
 import { User } from "src/common/decorators/user.decorator";
 import { MaybeSupervisor } from "src/common/decorators/maybe-supervisor.decorator";
 import { CreateLocationDto } from "./dto/create-location.dto";
-
+import { Response } from "express";
 @Controller("citizens")
 export class CitizensController {
   constructor(private svc: CitizensService) {}
@@ -28,11 +29,17 @@ export class CitizensController {
     return this.svc.create(dto);
   }
 
-  @Get()
+  @Get() 
   @UseGuards(RolesGuard("admin", "supervisor"))
   findAll(@User() user, @MaybeSupervisor() sup?: any) {
     const effectiveUser = sup ?? user;
     return this.svc.findAll(effectiveUser);
+  }
+
+  @Get("export-citizens")
+  @UseGuards(RolesGuard("admin"))
+  async exportCitizens(@Res() res: Response) {
+    await this.svc.exportCitizens(res);
   }
 
   @Get(":id")

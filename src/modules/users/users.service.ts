@@ -8,6 +8,9 @@ import { PrismaService } from "../database/prisma.service";
 import { CreateUserDto, UpdateUserDto } from "./dto";
 import * as bcrypt from "bcryptjs";
 import { baseUserSelect } from "src/common/prisma/selects";
+import * as ExcelJS from "exceljs";
+import { Response } from "express";
+
 
 @Injectable()
 export class UsersService {
@@ -101,4 +104,42 @@ export class UsersService {
       select: baseUserSelect,
     });
   }
+
+  async exportUsers(res: Response) {
+      const users = await this.prisma.user.findMany({
+      });
+  
+      const workbook = new ExcelJS.Workbook();
+      const sheet = workbook.addWorksheet("users");
+  
+      sheet.columns = [
+        { header: "User ID", key: "id", width: 30 },
+        { header: "User Name", key: "name", width: 30 },
+        { header: "User Email", key: "email", width: 30 },
+        { header: "User Role", key: "role", width: 30 },
+        { header: "Created At", key: "createdAt", width: 20 },
+      ];
+  
+      users.forEach((u) => {
+        sheet.addRow({
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          role: u.role,
+          createdAt: u.createdAt.toLocaleString(),
+        });
+      });
+  
+      res.setHeader(
+        "Content-Type",
+        "user/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      );
+      res.setHeader(
+        "Content-Disposition",
+        "attachment; filename=users.xlsx"
+      );
+  
+      await workbook.xlsx.write(res);
+      res.end();
+    }
 }
