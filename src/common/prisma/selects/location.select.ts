@@ -1,6 +1,7 @@
+import { baseCitizenSelect } from "./citizen.select";
+
 export const locationSelect = {
   id: true,
-  citizenId: true,
   type: true,
   governorate: true,
   town: true,
@@ -11,6 +12,11 @@ export const locationSelect = {
   longitude: true,
   notes: true,
   applicationId: true,
+  citizen:{
+    select: {
+      ...baseCitizenSelect
+    }
+  },
   createdAt: true,
   updatedAt: true,
 } as const;

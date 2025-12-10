@@ -12,6 +12,7 @@ import * as bcrypt from "bcryptjs";
 import { v4 as uuidv4 } from "uuid";
 import * as ExcelJS from "exceljs";
 import { Response } from "express";
+import { baseCitizenSelect } from "src/common/prisma/selects/citizen.select";
 @Injectable()
 export class CitizensService {
   constructor(private prisma: PrismaService) {}
@@ -27,12 +28,15 @@ export class CitizensService {
     const data: any = {
       national_id: createDto.national_id,
       first_name: createDto.first_name,
-      family_name: createDto.family_name ?? null,
-      password: passwordHash,
+      father_name: createDto.father_name,
+      grandfather_name: createDto.grandfather_name,
+      family_name: createDto.family_name,
+      full_name: `${createDto.first_name} ${createDto.father_name} ${createDto.grandfather_name} ${createDto.family_name}`.trim(),
+      phone_number: createDto.phone_number
     };
     const citizen = await this.prisma.citizen.create({
       data,
-      select: citizenSelect,
+      select: baseCitizenSelect,
     });
     return citizen;
   }
@@ -73,14 +77,7 @@ export class CitizensService {
     // Admins get all citizens (don't return password)
     return this.prisma.citizen.findMany({
       select: {
-        id: true,
-        national_id: true,
-        first_name: true,
-        family_name: true,
-        verification_status: true,
-        status: true,
-        locations: true,
-        createdAt: true,
+        ...baseCitizenSelect,
       },
       orderBy: { createdAt: "desc" },
     });
@@ -100,10 +97,14 @@ export class CitizensService {
     const citizen = await this.prisma.citizen.findUnique({ where: { id } });
     if (!citizen) throw new NotFoundException("Citizen not found");
     // Supervisor cannot update citizens — update route will be admin-only guard
+
+    if (dto.first_name || dto.father_name || dto.grandfather_name || dto.family_name) {
+      dto['full_name'] = `${dto.first_name || citizen.first_name} ${dto.father_name || citizen.father_name} ${dto.grandfather_name || citizen.grandfather_name} ${dto.family_name || citizen.family_name}`.trim();
+    }
     return this.prisma.citizen.update({
       where: { id },
       data: dto,
-      select: citizenSelect,
+      select: baseCitizenSelect,
     });
   }
 

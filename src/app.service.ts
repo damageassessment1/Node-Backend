@@ -13,9 +13,8 @@ export class AppService {
    * Returns all supervisors and all citizens in the system
    */
   async getAdminData(user: User) {
-    const [supervisors, citizens, totalCitizens] = await Promise.all([
+    const [users, citizens, applications,locations] = await Promise.all([
       this.prisma.user.findMany({
-        where: { role: "supervisor" },
         select: {
           ...baseUserSelect,
         },
@@ -24,22 +23,11 @@ export class AppService {
         select: citizenSelect,
         orderBy: { createdAt: "desc" },
       }),
-      this.prisma.citizen.count(),
+      this.prisma.application.findMany(),
+      this.prisma.location.findMany(),
     ]);
 
-    return {
-      supervisors,
-      citizens,
-      totalCitizens,
-      stats: {
-        totalSupervisors: supervisors.length,
-        assignedCitizens: 0,
-        unassignedCitizens: citizens.length,
-        verifiedCitizens: citizens.filter(
-          (c) => c.verification_status === "verified"
-        ).length,
-      },
-    };
+    return { users, citizens,applications,locations };
   }
 
   /**

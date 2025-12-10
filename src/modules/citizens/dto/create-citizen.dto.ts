@@ -4,14 +4,25 @@ export class CreateCitizenDto {
   @IsNotEmpty()
   @IsString()
   national_id: string;
-
-  @IsNotEmpty()
+  
+  @IsOptional()
   @IsString()
-  first_name: string;
+  first_name?: string;
 
   @IsOptional()
   @IsString()
+  father_name?: string;
+
+  @IsOptional()
+  @IsString()
+  grandfather_name?: string;
+  @IsOptional()
+  @IsString()
   family_name?: string;
+
+  @IsOptional()
+  @IsString()
+  phone_number?: string;
 
   @IsOptional()
   @IsString()
