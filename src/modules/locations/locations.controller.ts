@@ -13,6 +13,7 @@ import { RolesGuard } from "src/common/guards/roles.guard";
 import { User } from "src/common/decorators/user.decorator";
 import { CreateLocationDto } from "./dto/create-location.dto";
 import { UpdateLocationDto } from "./dto/update-location.dto";
+import { Citizen as CitizenType } from "@prisma/client";
 
 @Controller("locations")
 export class LocationsController {
@@ -21,7 +22,7 @@ export class LocationsController {
   @Post()
   @UseGuards(RolesGuard("admin"))
   create(@Body() dto: CreateLocationDto, @User() user: any) {
-    return this.svc.create(dto as any, user);
+    return this.svc.create(dto, user);
   }
 
   @Get()

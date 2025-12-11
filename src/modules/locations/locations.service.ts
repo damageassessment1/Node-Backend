@@ -8,43 +8,41 @@ import { PrismaService } from "../database/prisma.service";
 import { CreateLocationDto } from "./dto/create-location.dto";
 import { UpdateLocationDto } from "./dto/update-location.dto";
 import { locationSelect } from "src/common/prisma/selects";
+import { LocationType, User } from "@prisma/client";
 
 @Injectable()
 export class LocationsService {
   constructor(private prisma: PrismaService) {}
 
   async create(dto: CreateLocationDto, user: any) {
-    // Only admin can create a location
     if (user?.role !== "admin")
       throw new ForbiddenException("Insufficient permissions");
 
-    // Validate request & ensure citizen exists
-    const citizenId = (dto as any).citizenId;
-    if (!citizenId) throw new BadRequestException("citizenId is required");
-    const citizen = await this.prisma.citizen.findUnique({
-      where: { id: citizenId },
+    const app = await this.prisma.application.findFirst({
+      where: { citizenId: dto.citizenId },
+      include: { locations: true },
     });
-    if (!citizen) throw new NotFoundException("Citizen not found");
+
+    if (!app) throw new NotFoundException("Application not found");
+
+    if (app.locations.some((loc) => loc.type === dto.type)) {
+      throw new ForbiddenException(
+        `Application already has a ${dto.type} location`
+      );
+    }
 
     const loc = await this.prisma.location.create({
       data: {
-        citizenId: citizenId,
-        type: dto.type as any,
-        governorate: dto.governorate ?? null,
-        town: dto.town ?? null,
-        street: dto.street ?? null,
-        block_number: dto.block_number ?? null,
-        house_number: dto.house_number ?? null,
-        latitude: dto.latitude ?? null,
-        longitude: dto.longitude ?? null,
-        notes: dto.notes ?? null,
+        ...dto,
+        citizenId: dto.citizenId,
+        applicationId: app.id,
       },
-      select: locationSelect,
     });
+
     return loc;
   }
 
-  async findAll(user: any) {
+  async findAll(user: User) {
     // Both admin and supervisor can read locations
     return this.prisma.location.findMany({
       select: locationSelect,

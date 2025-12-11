@@ -1,42 +1,30 @@
-import { IsEnum, IsOptional, IsString, IsNumber, IsInt } from "class-validator";
+import {
+  IsEnum,
+  IsString,
+  IsNotEmpty,
+  IsNumberString,
+  IsInt,
+} from "class-validator";
 import { LocationType } from "@prisma/client";
 
 export class CreateLocationDto {
-  @IsInt()
-  citizenId: number;
+  @IsNotEmpty()
+  @IsNumberString()
+  latitude: number;
+
+  @IsNotEmpty()
+  @IsNumberString()
+  longitude: number;
 
   @IsEnum(["before_war", "after_war", "temporary", "current"])
   type: LocationType | any;
 
-  @IsOptional()
   @IsString()
   governorate?: string;
 
-  @IsOptional()
-  @IsString()
-  town?: string;
+  @IsInt()
+  citizenId: number;
 
-  @IsOptional()
-  @IsString()
-  street?: string;
-
-  @IsOptional()
-  @IsString()
-  block_number?: string;
-
-  @IsOptional()
-  @IsString()
-  house_number?: string;
-
-  @IsOptional()
-  @IsNumber()
-  latitude?: number;
-
-  @IsOptional()
-  @IsNumber()
-  longitude?: number;
-
-  @IsOptional()
   @IsString()
   notes?: string;
 }
