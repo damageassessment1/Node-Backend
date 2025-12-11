@@ -35,26 +35,16 @@ export class AppService {
    * Returns citizens assigned to this supervisor
    */
   async getSupervisorData(user: User) {
-    // Supervisors can read all citizens (no per-supervisor assignment)
-    const assignedCitizens = await this.prisma.citizen.findMany({
-      select: citizenSelect,
-      orderBy: { createdAt: "desc" },
-    });
-    const stats = assignedCitizens.reduce(
-      (acc, c) => {
-        acc[c.verification_status] = (acc[c.verification_status] || 0) + 1;
-        return acc;
-      },
-      {} as Record<string, number>
-    );
+     const [ citizens, applications,locations] = await Promise.all([
+      this.prisma.citizen.findMany({
+        select: citizenSelect,
+        orderBy: { createdAt: "desc" },
+      }),
+      this.prisma.application.findMany(),
+      this.prisma.location.findMany(),
+    ]);
 
-    return {
-      assignedCitizens,
-      stats: {
-        total: assignedCitizens.length,
-        byVerificationStatus: stats,
-      },
-    };
+    return {citizens,applications,locations };
   }
 
 
