@@ -1,6 +1,6 @@
-import { IsNotEmpty, IsNumber, IsNumberString, IsString } from "class-validator";
+import { IsNotEmpty, IsNumberString, IsString } from "class-validator";
 
-export class AddLocationDto{
+export class AddLocationDto {
   @IsNotEmpty()
   @IsNumberString()
   latitude: number;
@@ -8,7 +8,6 @@ export class AddLocationDto{
   @IsNotEmpty()
   @IsNumberString()
   longitude: number;
-
 
   @IsString()
   governorate?: string;

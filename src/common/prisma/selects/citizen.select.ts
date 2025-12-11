@@ -5,14 +5,13 @@ export const baseCitizenSelect = {
   father_name: true,
   grandfather_name: true,
   family_name: true,
-  full_name:true,
-  phone_number:true,
+  full_name: true,
+  phone_number: true,
   verification_status: true,
   status: true,
   createdAt: true,
   updatedAt: true,
 } as const;
-
 
 export const citizenSelect = {
   id: true,

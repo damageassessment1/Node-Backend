@@ -176,10 +176,6 @@ export class ApplicationsService {
         data: { applicationId: id },
       });
     }
-    const updated = await this.prisma.application.update({
-      where: { id },
-      data: dto,
-    });
     // Return application with linked location
     const result = await this.prisma.application.findUnique({
       where: { id },

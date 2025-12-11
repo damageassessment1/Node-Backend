@@ -31,8 +31,9 @@ export class CitizensService {
       father_name: createDto.father_name,
       grandfather_name: createDto.grandfather_name,
       family_name: createDto.family_name,
-      full_name: `${createDto.first_name} ${createDto.father_name} ${createDto.grandfather_name} ${createDto.family_name}`.trim(),
-      phone_number: createDto.phone_number
+      full_name:
+        `${createDto.first_name} ${createDto.father_name} ${createDto.grandfather_name} ${createDto.family_name}`.trim(),
+      phone_number: createDto.phone_number,
     };
     const citizen = await this.prisma.citizen.create({
       data,
@@ -98,8 +99,14 @@ export class CitizensService {
     if (!citizen) throw new NotFoundException("Citizen not found");
     // Supervisor cannot update citizens — update route will be admin-only guard
 
-    if (dto.first_name || dto.father_name || dto.grandfather_name || dto.family_name) {
-      dto['full_name'] = `${dto.first_name || citizen.first_name} ${dto.father_name || citizen.father_name} ${dto.grandfather_name || citizen.grandfather_name} ${dto.family_name || citizen.family_name}`.trim();
+    if (
+      dto.first_name ||
+      dto.father_name ||
+      dto.grandfather_name ||
+      dto.family_name
+    ) {
+      dto["full_name"] =
+        `${dto.first_name || citizen.first_name} ${dto.father_name || citizen.father_name} ${dto.grandfather_name || citizen.grandfather_name} ${dto.family_name || citizen.family_name}`.trim();
     }
     return this.prisma.citizen.update({
       where: { id },
