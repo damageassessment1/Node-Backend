@@ -10,7 +10,4 @@ export class UpdateApplicationDto {
   @IsString()
   notes?: string;
 
-  @IsOptional()
-  @IsInt()
-  locationId?: number;
 }

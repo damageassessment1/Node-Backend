@@ -141,45 +141,13 @@ export class ApplicationsService {
     });
     if (!app) throw new NotFoundException("Application not found");
 
-    // Admin or supervisor can update
-    if (user?.role !== "admin" && user?.role !== "supervisor")
-      throw new ForbiddenException("Insufficient permissions");
-
-    // If the locationId was changed, update location application mappings
-    if (dto.locationId) {
-      const currentLocation = await this.prisma.location.findFirst({
-        where: { applicationId: id },
-      });
-      if (currentLocation && dto.locationId !== currentLocation.id) {
-        // Clear previous location.applicationId
-        await this.prisma.location.update({
-          where: { id: currentLocation.id },
-          data: { applicationId: null },
-        });
-      }
-      // Set new location.applicationId
-      const newLocation = await this.prisma.location.findUnique({
-        where: { id: dto.locationId },
-      });
-      if (!newLocation) throw new NotFoundException("New location not found");
-      // Ensure the new location belongs to the same citizen as the application
-      if (newLocation.citizenId !== app.citizenId)
-        throw new ForbiddenException(
-          "New location does not belong to the same citizen as the application"
-        );
-      if (newLocation.applicationId)
-        throw new ForbiddenException(
-          "New location already linked to an application"
-        );
-      await this.prisma.location.update({
-        where: { id: dto.locationId },
-        data: { applicationId: id },
-      });
-    }
     // Return application with linked location
-    const result = await this.prisma.application.findUnique({
+    const result = await this.prisma.application.update({
       where: { id },
-      select: applicationSelect,
+     data:{
+      ...dto
+     },
+     select:applicationSelect
     });
     return result;
   }
