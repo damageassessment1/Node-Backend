@@ -9,8 +9,15 @@ export class AddLocationDto {
   @IsNumberString()
   longitude: number;
 
+
+  @IsNotEmpty()
   @IsString()
-  governorate?: string;
+  address: string;
+  
+
+  @IsNotEmpty()
+  @IsString()
+  neighborhood: string;
 
   @IsOptional()
   @IsJSON()

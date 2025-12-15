@@ -57,6 +57,8 @@ model Location {
   applicationId String?         
   type          LocationType
   extraData        Json?
+  address         String?
+  neighborhood   String?
   governorate   String?
   town          String?
   street        String?

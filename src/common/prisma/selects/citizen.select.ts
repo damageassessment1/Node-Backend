@@ -24,6 +24,8 @@ export const citizenSelect = {
     select: {
       id: true,
       type: true,
+      address: true,
+      neighborhood: true,
       governorate: true,
       town: true,
       street: true,

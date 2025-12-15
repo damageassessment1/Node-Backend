@@ -24,10 +24,13 @@ export const applicationSelect = {
       full_name: true,
     },
   },
-  locations: { // Fix: should be plural and match schema
+  locations: {
+    // Fix: should be plural and match schema
     select: {
       id: true,
       type: true,
+      address: true,
+      neighborhood: true,
       governorate: true,
       town: true,
       street: true,
@@ -36,7 +39,7 @@ export const applicationSelect = {
       latitude: true,
       longitude: true,
       notes: true,
-      extraData:true
+      extraData: true,
     },
   },
 } as const;
