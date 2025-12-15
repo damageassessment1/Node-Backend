@@ -36,6 +36,7 @@ export const applicationSelect = {
       latitude: true,
       longitude: true,
       notes: true,
+      extraData:true
     },
   },
 } as const;

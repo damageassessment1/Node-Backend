@@ -11,6 +11,7 @@ export const locationSelect = {
   latitude: true,
   longitude: true,
   notes: true,
+  extraData:true,
   applicationId: true,
   citizen: {
     select: {

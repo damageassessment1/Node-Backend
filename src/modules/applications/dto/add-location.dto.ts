@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumberString, IsString } from "class-validator";
+import { IsJSON, IsNotEmpty, IsNumberString, IsOptional, IsString } from "class-validator";
 
 export class AddLocationDto {
   @IsNotEmpty()
@@ -11,4 +11,8 @@ export class AddLocationDto {
 
   @IsString()
   governorate?: string;
+
+  @IsOptional()
+  @IsJSON()
+  extraData?:string
 }

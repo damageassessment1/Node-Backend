@@ -192,11 +192,7 @@ export class ApplicationsService {
 
     if (!app) throw new NotFoundException("Application not found");
 
-    if (app.locations.some((loc) => loc.type === type)) {
-      throw new ForbiddenException(
-        `Application already has a ${type} location`
-      );
-    }
+   
     // Create location for the citizen
     const location = await this.prisma.location.create({
       data: {

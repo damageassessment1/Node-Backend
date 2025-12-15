@@ -32,6 +32,7 @@ export const citizenSelect = {
       latitude: true,
       longitude: true,
       notes: true,
+      extraData:true,
       createdAt: true,
       updatedAt: true,
     },
