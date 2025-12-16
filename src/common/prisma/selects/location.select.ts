@@ -3,6 +3,8 @@ import { baseCitizenSelect } from "./citizen.select";
 export const locationSelect = {
   id: true,
   type: true,
+  address: true,
+  neighborhood: true,
   governorate: true,
   // town: true,
   // street: true,
@@ -11,7 +13,7 @@ export const locationSelect = {
   latitude: true,
   longitude: true,
   notes: true,
-  extraData:true,
+  extraData: true,
   applicationId: true,
   citizen: {
     select: {
