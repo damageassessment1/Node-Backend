@@ -48,8 +48,7 @@ export class ApplicationsService {
       data: {
         id: customId,
         citizenId: dto.citizenId,
-        application_date: dto.application_date ?? new Date(),
-        status: dto.status ?? "pending",
+        status: dto.status ,
         notes: dto.notes ?? null,
         createdById: user?.id ?? null,
       },
@@ -144,10 +143,10 @@ export class ApplicationsService {
     // Return application with linked location
     const result = await this.prisma.application.update({
       where: { id },
-     data:{
-      ...dto
-     },
-     select:applicationSelect
+      data: {
+        ...dto,
+      },
+      select: applicationSelect,
     });
     return result;
   }
@@ -192,7 +191,20 @@ export class ApplicationsService {
 
     if (!app) throw new NotFoundException("Application not found");
 
-   
+    if (type === LocationType.CURRENT) {
+      if (app.locations.some((l) => l.type === LocationType.CURRENT)) {
+        throw new ConflictException("This user already has a current location");
+      }
+      const location = await this.prisma.location.create({
+        data: {
+          ...dto,
+          citizenId: app.citizenId,
+          type,
+        },
+      });
+      return location;
+    }
+
     // Create location for the citizen
     const location = await this.prisma.location.create({
       data: {
@@ -203,21 +215,6 @@ export class ApplicationsService {
       },
     });
     return location;
-  }
-
-  async addExtraData(dto: AddExtraDataDto, user: Citizen) {
-    const app = await this.prisma.application.findFirst({
-      where: { citizenId: user.id },
-    });
-
-    if (!app) throw new NotFoundException("Application not found");
-
-    const updated = await this.prisma.application.update({
-      where: { id: app.id },
-      data: { extraData: dto.extraData },
-    });
-
-    return updated;
   }
 
   async getMyApplicationInfo(user: Citizen) {

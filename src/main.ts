@@ -12,6 +12,7 @@ import { AllExceptionsFilter } from "./common/filters/all-exceptions.filter";
 import { JwtService } from "@nestjs/jwt";
 import { PrismaService } from "./modules/database/prisma.service";
 import * as bcrypt from "bcryptjs";
+import { UserRole } from "@prisma/client";
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -57,7 +58,7 @@ async function bootstrap() {
             email: superAdminEmail,
             name: "Super Admin",
             password: hash,
-            role: "admin",
+            role: UserRole.ADMIN,
           },
         });
         console.log("Super admin seeded:", superAdminEmail);

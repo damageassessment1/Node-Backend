@@ -10,6 +10,7 @@ import { AppService } from "./app.service";
 import { ScheduleModule } from "@nestjs/schedule";
 import { HttpModule } from "@nestjs/axios";
 import { KeepAliveService } from "./keep-alive.service";
+import { BanksModule } from "./modules/banks/banks.module";
 // import { KeepAliveService } from "./keep-alive.service";
 
 @Module({
@@ -22,6 +23,7 @@ import { KeepAliveService } from "./keep-alive.service";
     CitizensModule,
     ApplicationsModule,
     LocationsModule,
+    BanksModule,
   ],
   providers: [AppService,KeepAliveService],
   controllers: [AppController],

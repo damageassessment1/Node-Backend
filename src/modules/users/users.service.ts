@@ -10,6 +10,7 @@ import * as bcrypt from "bcryptjs";
 import { baseUserSelect } from "src/common/prisma/selects";
 import * as ExcelJS from "exceljs";
 import { Response } from "express";
+import { UserRole } from "@prisma/client";
 
 
 @Injectable()
@@ -95,7 +96,7 @@ export class UsersService {
   async searchSupervisors(query: string) {
     return this.prisma.user.findMany({
       where: {
-        role: 'supervisor',
+        role: UserRole.SUPERVISOR,
         OR: [
           { name: { contains: query, mode: "insensitive" } },
           { email: { contains: query, mode: "insensitive" } },

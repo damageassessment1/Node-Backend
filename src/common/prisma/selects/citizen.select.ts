@@ -27,6 +27,7 @@ export const citizenSelect = {
       address: true,
       neighborhood: true,
       governorate: true,
+      status:true,
       town: true,
       street: true,
       block_number: true,

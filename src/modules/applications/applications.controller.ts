@@ -16,7 +16,7 @@ import { RolesGuard } from "src/common/guards/roles.guard";
 import { User } from "src/common/decorators/user.decorator";
 import { AddLocationDto } from "./dto/add-location.dto";
 import { AddExtraDataDto } from "./dto/add-extradata.dto";
-import { Citizen as CitizenType, LocationType } from "@prisma/client";
+import { Citizen as CitizenType, LocationType, UserRole } from "@prisma/client";
 import { Citizen } from "src/common/decorators/citizen.decorator";
 import { Response } from "express";
 
@@ -25,13 +25,13 @@ export class ApplicationsController {
   constructor(private readonly service: ApplicationsService) {}
 
   @Post()
-  @UseGuards(RolesGuard("admin"))
+  @UseGuards(RolesGuard(UserRole.ADMIN))
   async create(@Body() dto: CreateApplicationDto, @User() user: any) {
     return this.service.create(dto, user);
   }
 
   @Get()
-  @UseGuards(RolesGuard("admin", "supervisor"))
+  @UseGuards(RolesGuard(UserRole.ADMIN,UserRole.SUPERVISOR))
   async findAll(@User() user: any) {
     return this.service.findAll(user);
   }
@@ -49,7 +49,7 @@ export class ApplicationsController {
   ) {
     return this.service.addLocationToApplication(
       dto,
-      LocationType.before_war,
+      LocationType.BEFORE_WAR,
       user
     );
   }
@@ -62,28 +62,20 @@ export class ApplicationsController {
   ) {
     return this.service.addLocationToApplication(
       dto,
-      LocationType.current,
+      LocationType.CURRENT,
       user
     );
   }
 
-  // Add extra data (damage/building details) to application
-  @Post("/add-extra-data")
-  async addExtraData(
-    @Body() dto: AddExtraDataDto,
-    @Citizen() user: CitizenType
-  ) {
-    return this.service.addExtraData(dto, user);
-  }
 
   @Get("export-applications")
-  @UseGuards(RolesGuard("admin"))
+  @UseGuards(RolesGuard(UserRole.ADMIN))
   async exportApplications(@Res() res: Response) {
     await this.service.exportApplications(res);
   }
 
   @Get(":id")
-  @UseGuards(RolesGuard("admin", "supervisor"))
+  @UseGuards(RolesGuard(UserRole.ADMIN,UserRole.SUPERVISOR))
   async findOne(@Param("id") id: string, @User() user: any) {
     return this.service.findOne(id, user);
   }
@@ -95,7 +87,7 @@ export class ApplicationsController {
   // }
 
   @Patch(":id")
-  @UseGuards(RolesGuard("admin", "supervisor"))
+  @UseGuards(RolesGuard(UserRole.ADMIN,UserRole.SUPERVISOR))
   async update(
     @Param("id") id: string,
     @Body() dto: UpdateApplicationDto,
@@ -105,7 +97,7 @@ export class ApplicationsController {
   }
 
   @Delete(":id")
-  @UseGuards(RolesGuard("admin"))
+  @UseGuards(RolesGuard(UserRole.ADMIN))
   async remove(@Param("id") id: string, @User() user: any) {
     return this.service.remove(id, user);
   }

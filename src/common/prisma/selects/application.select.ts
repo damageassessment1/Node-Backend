@@ -1,7 +1,6 @@
 export const applicationSelect = {
   id: true,
   citizenId: true,
-  application_date: true,
   status: true,
   notes: true,
   extraData: true, // Include extraData field
@@ -31,6 +30,7 @@ export const applicationSelect = {
       type: true,
       address: true,
       neighborhood: true,
+      status:true,
       governorate: true,
       town: true,
       street: true,

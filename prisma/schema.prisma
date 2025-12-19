@@ -13,7 +13,7 @@ model User {
   email               String        @unique
   email_verified_at   DateTime?
   password            String
-  role                UserRole      @default(admin)
+  role                UserRole      @default(ADMIN)
   remember_token      String?
   createdAt           DateTime      @default(now())
   updatedAt           DateTime      @updatedAt
@@ -39,14 +39,16 @@ model Citizen {
   date_of_birth       DateTime?
   gender              Gender?
   marital_status      MaritalStatus?
-  status              CitizenStatus      @default(alive)
+  status              CitizenStatus      @default(ALIVE)
   password            String?
   extra_data          Json?
   createdAt           DateTime           @default(now())
   updatedAt           DateTime           @updatedAt
-  verification_status VerificationStatus @default(pending)
+  verification_status VerificationStatus @default(PENDING)
   locations           Location[]
   applications        Application[]
+  bankAccounts CitizenBankAccount[]
+
 
   @@map("citizens")
 }
@@ -67,6 +69,7 @@ model Location {
   latitude      Decimal?     @db.Decimal(10, 7)
   longitude     Decimal?     @db.Decimal(10, 7)
   notes         String?
+  status        LocationStatus  @default(PENDING)
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
   application   Application? @relation("ApplicationToLocation", fields: [applicationId], references: [id])
@@ -131,9 +134,8 @@ model Code {
 model Application {
   id               String               @id @default(uuid())
   citizenId        Int
-  // locationId removed; linkage is tracked on Location.applicationId instead
-  application_date DateTime          @default(now())
-  status           ApplicationStatus @default(pending)
+  type            String?
+  status           ApplicationStatus @default(PENDING)
   notes            String?
   extraData        Json?
   createdById      Int? // User that created the application
@@ -150,47 +152,111 @@ model Application {
 
 
 
+model Bank {
+  id        String                @id @default(uuid())
+  enName      String
+  arName      String
+  swiftCode String?
+  country   String?
+
+  accounts  CitizenBankAccount[]
+
+  createdAt DateTime              @default(now())
+  @@map("banks")
+
+}
+
+
+model CitizenBankAccount {
+  id                String   @id @default(uuid())
+  citizenId         Int
+  bankId            String
+
+  accountHolderName String
+  accountNumber     String   // encrypt at app level
+  iban              String?
+  accountType       AccountType
+  currency          String   // ISO 4217 (USD, ILS, EUR)
+
+  isPrimary         Boolean  @default(false)
+  status            AccountStatus @default(ACTIVE)
+
+  citizen           Citizen @relation(fields: [citizenId], references: [id])
+  bank              Bank    @relation(fields: [bankId], references: [id])
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([citizenId])
+  @@index([bankId])
+  @@map("citizen_bank_account")
+}
+
+
+
+
+enum AccountType {
+  SAVINGS
+  CURRENT
+  WALLET
+}
+
+enum AccountStatus {
+  ACTIVE
+  SUSPENDED
+  CLOSED
+}
+
+
+
 
 enum Gender {
-  male
-  female
+  MALE
+  FEMALE
 }
 
 enum MaritalStatus {
-  single
-  married
-  divorced
-  widowed
+  SINGLE
+  MARRIED
+  DIVORCED
+  WIDOWED
 }
 
 enum CitizenStatus {
-  alive
-  dead
+  ALIVE
+  DEAD
 }
 
 enum LocationType {
-  before_war
-  after_war
-  temporary
-  current
+  BEFORE_WAR
+  AFTER_WAR
+  TEMPORARY
+  CURRENT
 }
 
 enum UserRole {
-  admin
-  supervisor
+  ADMIN
+  SUPERVISOR
 }
 
 enum VerificationStatus {
-  pending
-  national_id_verified
-  questions_verified
-  verified
+  PENDING
+  NATIONAL_ID_VERIFIED
+  QUESTIONS_VERIFIED
+  VERIFIED
 }
 
 enum ApplicationStatus {
-  pending
-  verified
-  approved
-  rejected
-  closed
+  PENDING
+  VERIFIED
+  APPROVED
+  REJECTED
+  CLOSED
+}
+
+enum LocationStatus {
+  PENDING
+  VERIFIED
+  APPROVED
+  REJECTED
 }
