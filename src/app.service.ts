@@ -13,7 +13,7 @@ export class AppService {
    * Returns all supervisors and all citizens in the system
    */
   async getAdminData(user: User) {
-    const [users, citizens, applications,locations] = await Promise.all([
+    const [users, citizens, applications,locations,banking] = await Promise.all([
       this.prisma.user.findMany({
         select: {
           ...baseUserSelect,
@@ -25,9 +25,10 @@ export class AppService {
       }),
       this.prisma.application.findMany(),
       this.prisma.location.findMany(),
+      this.prisma.citizenBankAccount.findMany()
     ]);
 
-    return { users, citizens,applications,locations };
+    return { users, citizens,applications,locations,banking };
   }
 
   /**

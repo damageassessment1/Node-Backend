@@ -1,0 +1,15 @@
+import {
+  Controller,
+  Get,
+} from "@nestjs/common";
+import { BanksService } from "../banks.service";
+
+@Controller('banks')
+export class BanksController {
+  constructor(private service: BanksService) {}
+
+  @Get()
+  getAllBanks() {
+    return this.service.getAllBanks();
+  }
+}

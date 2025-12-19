@@ -8,7 +8,6 @@ import {
   ParseIntPipe,
   Patch,
   Delete,
-  Query,
   Res,
 } from "@nestjs/common";
 import { CitizensService } from "./citizens.service";

@@ -3,38 +3,46 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { Citizen, User, UserRole } from "@prisma/client";
+import { Citizen } from "@prisma/client";
 import { CreateBankAccountDto, UpdateBankAccountDto } from "./dto/bank.dto";
 import { PrismaService } from "../database/prisma.service";
+import { baseCitizenSelect } from "src/common/prisma/selects/citizen.select";
+import * as ExcelJS from "exceljs";
+import { Response } from "express";
 
 @Injectable()
 export class BanksService {
   constructor(private prisma: PrismaService) {}
 
- 
+  /* =========================
+     BANKS
+  ========================= */
   async getAllBanks() {
     return this.prisma.bank.findMany({
       orderBy: { enName: "asc" },
     });
   }
 
- 
-  async addBankAccount(dto: CreateBankAccountDto, citizen: Citizen) {
-    // verify bank exists
-    const bank = await this.prisma.bank.findUnique({
-      where: { id: dto.bankId },
+
+   /* =========================
+     Get All Bank Accouts For All Citizens (Admin)
+  ========================= */
+  async getAllBankAcountsForCitizens() {
+    return this.prisma.citizenBankAccount.findMany({
+      orderBy: { id: "asc" },
+      include: { bank: true, citizen: { select: baseCitizenSelect } },
     });
+  }
 
-    if (!bank) {
-      throw new NotFoundException("Bank not found");
-    }
+  /* =========================
+     CITIZEN (SELF)
+  ========================= */
+  async createMyBankAccount(dto: CreateBankAccountDto, citizen: Citizen) {
+    await this.ensureBankExists(dto.bankId);
+    await this.ensureNoDuplicateBankAccount(citizen.id,dto.bankId)
 
-    // ensure only one primary account
     if (dto.isPrimary) {
-      await this.prisma.citizenBankAccount.updateMany({
-        where: { citizenId: citizen.id },
-        data: { isPrimary: false },
-      });
+      await this.clearPrimaryAccount(citizen.id);
     }
 
     return this.prisma.citizenBankAccount.create({
@@ -51,17 +59,43 @@ export class BanksService {
     });
   }
 
- 
-  async getCitizenBankAccounts(citizenId: number, user: User) {
-    if (
-      user.role !== UserRole.ADMIN &&
-      user.role !== UserRole.SUPERVISOR
-    ) {
-      throw new ForbiddenException();
+  /* =========================
+     ADMIN (CITIZEN SCOPED)
+  ========================= */
+  async createBankAccountForCitizen(
+    citizenId: number,
+    dto: CreateBankAccountDto
+  ) {
+    await this.ensureCitizenExists(citizenId);
+    await this.ensureBankExists(dto.bankId);
+
+    await this.ensureNoDuplicateBankAccount(citizenId,dto.bankId)
+
+    if (dto.isPrimary) {
+      await this.clearPrimaryAccount(citizenId);
     }
 
+    return this.prisma.citizenBankAccount.create({
+      data: {
+        citizenId,
+        bankId: dto.bankId,
+        accountHolderName: dto.accountHolderName,
+        accountNumber: dto.accountNumber,
+        iban: dto.iban,
+        accountType: dto.accountType,
+        currency: dto.currency,
+        isPrimary: dto.isPrimary ?? false,
+      },
+      include: {
+        bank: true,
+        citizen: { select: baseCitizenSelect },
+      },
+    });
+  }
+
+  async getMyBankAccounts(citizen: Citizen) {
     return this.prisma.citizenBankAccount.findMany({
-      where: { citizenId },
+      where: { citizenId: citizen.id },
       include: {
         bank: {
           select: {
@@ -75,34 +109,19 @@ export class BanksService {
     });
   }
 
-  
   async updateBankAccount(
     citizenId: number,
     accountId: string,
-    dto: UpdateBankAccountDto,
-    user: User,
+    dto: UpdateBankAccountDto
   ) {
-    if (user.role !== UserRole.ADMIN) {
-      throw new ForbiddenException();
-    }
-
-    const account = await this.prisma.citizenBankAccount.findFirst({
-      where: { id: accountId, citizenId },
-    });
-
-    if (!account) {
-      throw new NotFoundException("Bank account not found");
-    }
+    const account = await this.findCitizenAccountOrFail(citizenId, accountId);
 
     if (dto.isPrimary) {
-      await this.prisma.citizenBankAccount.updateMany({
-        where: { citizenId },
-        data: { isPrimary: false },
-      });
+      await this.clearPrimaryAccount(citizenId);
     }
 
     return this.prisma.citizenBankAccount.update({
-      where: { id: accountId },
+      where: { id: account.id },
       data: {
         accountHolderName: dto.accountHolderName,
         accountNumber: dto.accountNumber,
@@ -112,19 +131,125 @@ export class BanksService {
         isPrimary: dto.isPrimary,
         status: dto.status,
       },
+      include: {
+        bank: true,
+        citizen: { select: baseCitizenSelect },
+      },
     });
   }
 
-  
-  async deleteBankAccount(
-    citizenId: number,
-    accountId: string,
-    user: User,
-  ) {
-    if (user.role !== UserRole.ADMIN) {
-      throw new ForbiddenException();
-    }
+  async deleteBankAccount(citizenId: number, accountId: string) {
+    await this.findCitizenAccountOrFail(citizenId, accountId);
 
+    return this.prisma.citizenBankAccount.delete({
+      where: { id: accountId },
+    });
+  }
+
+  /* =========================
+     ADMIN EXPORT
+  ========================= */
+  async exportBankAccounts(res: Response) {
+    const accounts = await this.prisma.citizenBankAccount.findMany({
+      include: {
+        citizen: true,
+        bank: true,
+      },
+    });
+
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet("Bank Accounts");
+
+    sheet.columns = [
+      { header: "Account ID", key: "id", width: 30 },
+      { header: "Citizen ID", key: "citizenId", width: 15 },
+      { header: "Citizen Name", key: "citizenName", width: 30 },
+
+      { header: "Bank (EN)", key: "bankEn", width: 25 },
+      { header: "Bank (AR)", key: "bankAr", width: 25 },
+      { header: "SWIFT Code", key: "swift", width: 20 },
+      { header: "Country", key: "country", width: 20 },
+
+      { header: "Account Holder Name", key: "holder", width: 30 },
+      { header: "Account Number", key: "accountNumber", width: 25 },
+      { header: "IBAN", key: "iban", width: 30 },
+
+      { header: "Account Type", key: "type", width: 20 },
+      { header: "Currency", key: "currency", width: 10 },
+      { header: "Primary", key: "primary", width: 10 },
+      { header: "Status", key: "status", width: 15 },
+
+      { header: "Created At", key: "createdAt", width: 20 },
+    ];
+
+    accounts.forEach((acc) => {
+      sheet.addRow({
+        id: acc.id,
+        citizenId: acc.citizenId,
+        citizenName: acc.citizen?.full_name,
+
+        bankEn: acc.bank?.enName,
+        bankAr: acc.bank?.arName,
+        swift: acc.bank?.swiftCode,
+        country: acc.bank?.country,
+
+        holder: acc.accountHolderName,
+        accountNumber: acc.accountNumber,
+        iban: acc.iban,
+
+        type: acc.accountType,
+        currency: acc.currency,
+        primary: acc.isPrimary ? "YES" : "NO",
+        status: acc.status,
+
+        createdAt: acc.createdAt.toLocaleString(),
+      });
+    });
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=bank-accounts.xlsx"
+    );
+
+    await workbook.xlsx.write(res);
+    res.end();
+  }
+
+  /* =========================
+     PRIVATE HELPERS
+  ========================= */
+  private async ensureCitizenExists(citizenId: number) {
+    const citizen = await this.prisma.citizen.findUnique({
+      where: { id: citizenId },
+    });
+
+    if (!citizen) {
+      throw new NotFoundException("Citizen not found");
+    }
+  }
+
+  private async ensureBankExists(bankId: string) {
+    const bank = await this.prisma.bank.findUnique({
+      where: { id: bankId },
+    });
+
+    if (!bank) {
+      throw new NotFoundException("Bank not found");
+    }
+  }
+
+  private async clearPrimaryAccount(citizenId: number) {
+    await this.prisma.citizenBankAccount.updateMany({
+      where: { citizenId },
+      data: { isPrimary: false },
+    });
+  }
+
+  private async findCitizenAccountOrFail(citizenId: number, accountId: string) {
     const account = await this.prisma.citizenBankAccount.findFirst({
       where: { id: accountId, citizenId },
     });
@@ -133,8 +258,25 @@ export class BanksService {
       throw new NotFoundException("Bank account not found");
     }
 
-    return this.prisma.citizenBankAccount.delete({
-      where: { id: accountId },
-    });
+    return account;
   }
+
+  private async ensureNoDuplicateBankAccount(
+  citizenId: number,
+  bankId: string,
+) {
+  const exists = await this.prisma.citizenBankAccount.findFirst({
+    where: {
+      citizenId,
+      bankId,
+    },
+  });
+
+  if (exists) {
+    throw new ForbiddenException(
+      'Citizen already has an account in this bank',
+    );
+  }
+}
+
 }
