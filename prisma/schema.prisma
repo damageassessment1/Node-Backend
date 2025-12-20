@@ -30,6 +30,7 @@ model Citizen {
   grandfather_name    String?
   family_name         String?
   full_name           String?
+  family_members_number  Int?
   phone_number        String?
   email               String?
   whatsapp_number     String?

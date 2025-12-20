@@ -17,17 +17,20 @@ import { UserRole } from "@prisma/client";
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+    })
+  );
+
   // Register a global exception filter for JSON parse errors and all exceptions to return friendlier JSON message
   app.useGlobalFilters(
     new JsonBodyExceptionFilter(),
     new AllExceptionsFilter()
   );
 
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-    })
-  );
+  
+
   app.useGlobalInterceptors(new ResponseInterceptor());
 
   // Enable form and raw text parsers to support clients that send urlencoded and text/plain bodies

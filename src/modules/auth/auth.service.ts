@@ -17,6 +17,7 @@ import { generateApplicationId } from "src/common/utils";
 export interface VerificationQuestion {
   key: string;
   question: string;
+  en_question: string;
 }
 
 @Injectable()
@@ -148,7 +149,8 @@ export class AuthService {
         password: hashed,
         first_name: dto.firstName,
         father_name: dto.fatherName,
-        grandfather_name: dto.fatherName,
+        grandfather_name: dto.grandfatherName,
+        family_members_number:dto.familyMembersNumber,
         family_name: dto.familyName,
         full_name: `${dto.firstName} ${dto.fatherName} ${dto.grandfatherName} ${dto.familyName}`,
         phone_number: dto.phoneNumber,
@@ -293,7 +295,6 @@ export class AuthService {
     const questions: VerificationQuestion[] = [];
     const relations = person.relations || [];
 
-    // Get all children (both sons and daughters have relation code "Son")
     const children = this.getRelativesByCode(relations, "Son");
     const sons = children.filter(
       (rel) => rel.relativePerson?.sexCode === "ذكر"
@@ -305,110 +306,112 @@ export class AuthService {
     const father = this.getRelativesByCode(relations, "Father");
     const mother = this.getRelativesByCode(relations, "Mother");
 
-    // Questions about sons - National ID and Birth Date only
+    // Sons
     sons.forEach((rel, index) => {
       const son = rel.relativePerson;
       if (son?.firstName) {
-        // Son's national ID
+        // National ID
         questions.push({
           key: `son_${index}_${son.id}_nid`,
           question: `ما هو الرقم الوطني لابنك ${son.firstName}؟`,
+          en_question: `What is the national ID of your son (${son.firstName})?`,
         });
 
-        // Son's birth date
+        // Birth date
         if (son.birthDate) {
           questions.push({
             key: `son_${index}_${son.id}_bd`,
             question: `ما هو تاريخ ميلاد ابنك ${son.firstName}؟ (يوم/شهر/سنة)`,
+            en_question: `What is the birth date of your son (${son.firstName})? (DD/MM/YYYY)`,
           });
         }
       }
     });
 
-    // Questions about daughters - National ID and Birth Date only
+    // Daughters
     daughters.forEach((rel, index) => {
       const daughter = rel.relativePerson;
       if (daughter?.firstName) {
-        // Daughter's national ID
         questions.push({
           key: `daughter_${index}_${daughter.id}_nid`,
           question: `ما هو الرقم الوطني لابنتك ${daughter.firstName}؟`,
+          en_question: `What is the national ID of your daughter (${daughter.firstName})?`,
         });
 
-        // Daughter's birth date
         if (daughter.birthDate) {
           questions.push({
             key: `daughter_${index}_${daughter.id}_bd`,
             question: `ما هو تاريخ ميلاد ابنتك ${daughter.firstName}؟ (يوم/شهر/سنة)`,
+            en_question: `What is the birth date of your daughter (${daughter.firstName})? (DD/MM/YYYY)`,
           });
         }
       }
     });
 
-    // Questions about spouse - National ID and Birth Date only
+    // Spouse
     if (spouse.length > 0) {
       const spouseData = spouse[0].relativePerson;
       if (spouseData) {
-        // Spouse's national ID
         questions.push({
           key: `spouse_${spouseData.id}_nid`,
           question: `ما هو الرقم الوطني لزوجك/زوجتك؟`,
+          en_question: `What is the national ID of your spouse (${spouseData.firstName})?`,
         });
 
-        // Spouse's birth date
         if (spouseData.birthDate) {
           questions.push({
             key: `spouse_${spouseData.id}_bd`,
             question: `ما هو تاريخ ميلاد زوجك/زوجتك؟ (يوم/شهر/سنة)`,
+            en_question: `What is the birth date of your spouse (${spouseData.firstName})? (DD/MM/YYYY)`,
           });
         }
       }
     }
 
-    // Personal questions - Birth Date only (they already know their own national ID)
+    // Personal
     if (person.birthDate) {
       questions.push({
         key: `personal_${person.id}_bd`,
         question: `ما هو تاريخ ميلادك؟ (يوم/شهر/سنة)`,
+        en_question: `What is your birth date? (DD/MM/YYYY)`,
       });
     }
 
-    // Questions about father - National ID and Birth Date
+    // Father
     if (father.length > 0) {
       const fatherData = father[0].relativePerson;
       if (fatherData) {
-        // Father's national ID
         questions.push({
           key: `father_${fatherData.id}_nid`,
           question: `ما هو الرقم الوطني لوالدك؟`,
+          en_question: `What is the national ID of your father (${fatherData.firstName})?`,
         });
-        console.log(fatherData.birthDate);
 
-        // Father's birth date
         if (fatherData.birthDate) {
           questions.push({
             key: `father_${fatherData.id}_bd`,
             question: `ما هو تاريخ ميلاد والدك؟ (يوم/شهر/سنة)`,
+            en_question: `What is the birth date of your father (${fatherData.firstName})? (DD/MM/YYYY)`,
           });
         }
       }
     }
 
-    // Questions about mother - National ID and Birth Date
+    // Mother
     if (mother.length > 0) {
       const motherData = mother[0].relativePerson;
       if (motherData) {
-        // Mother's national ID
         questions.push({
           key: `mother_${motherData.id}_nid`,
           question: `ما هو الرقم الوطني لوالدتك؟`,
+          en_question: `What is the national ID of your mother (${motherData.firstName})?`,
         });
 
-        // Mother's birth date
         if (motherData.birthDate) {
           questions.push({
             key: `mother_${motherData.id}_bd`,
             question: `ما هو تاريخ ميلاد والدتك؟ (يوم/شهر/سنة)`,
+            en_question: `What is the birth date of your mother (${motherData.firstName})? (DD/MM/YYYY)`,
           });
         }
       }

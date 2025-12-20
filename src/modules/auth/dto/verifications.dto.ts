@@ -36,6 +36,10 @@ export class CompleteSignupDto {
   @IsNotEmpty({message:"اسم العائلة مطلوب"})
   familyName: string;
 
+  @IsNumber({},{message:"عدد أفراد العائلة يجب أن يكون رقم"})
+  @IsNotEmpty({message:"عدد أفراد العائلة مطلوب"})
+  familyMembersNumber:number
+
   @IsString({message:"البريد الإلكتروني يجب أن يكون نص"})
   @IsNotEmpty({message:"البريد الإلكتروني مطلوب"})
   email: string;

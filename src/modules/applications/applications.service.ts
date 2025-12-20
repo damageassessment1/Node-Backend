@@ -15,10 +15,14 @@ import { generateApplicationId } from "src/common/utils";
 import { Citizen, LocationType } from "@prisma/client";
 import * as ExcelJS from "exceljs";
 import { Response } from "express";
+import { StorageService } from "../storage/storage.service";
 
 @Injectable()
 export class ApplicationsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private readonly storageService: StorageService
+  ) {}
 
   async create(dto: CreateApplicationDto, user: any) {
     // Only admin can create
@@ -48,7 +52,7 @@ export class ApplicationsService {
       data: {
         id: customId,
         citizenId: dto.citizenId,
-        status: dto.status ,
+        status: dto.status,
         notes: dto.notes ?? null,
         createdById: user?.id ?? null,
       },
@@ -182,7 +186,12 @@ export class ApplicationsService {
   async addLocationToApplication(
     dto: AddLocationDto,
     type: LocationType,
-    user: Citizen
+    user: Citizen,
+    uploads?: {
+      beforeWarImage?: Express.Multer.File;
+      afterWarImage?: Express.Multer.File;
+      ownershipDocuments?: Express.Multer.File[];
+    }
   ) {
     const app = await this.prisma.application.findFirst({
       where: { citizenId: user.id },
@@ -205,10 +214,36 @@ export class ApplicationsService {
       return location;
     }
 
+    let extraData = dto.extraData ? JSON.parse(dto.extraData) : {};
+
+    if (uploads && uploads.beforeWarImage) {
+      const [file] = await this.handleUploads(
+        uploads.beforeWarImage,
+        "before_war_image"
+      );
+      extraData.beforeWarImage = file;
+    }
+
+    if (uploads && uploads.afterWarImage) {
+      const [file] = await this.handleUploads(
+        uploads.afterWarImage,
+        "after_war_image"
+      );
+      extraData.afterWarImage = file;
+    }
+
+    if (uploads && uploads.ownershipDocuments) {
+      extraData.ownershipDocuments = await this.handleUploads(
+        uploads.ownershipDocuments,
+        "ownership_documents"
+      );
+    }
+
     // Create location for the citizen
     const location = await this.prisma.location.create({
       data: {
         ...dto,
+        extraData: JSON.stringify(extraData),
         citizenId: app.citizenId,
         type,
         applicationId: app.id,
@@ -271,5 +306,34 @@ export class ApplicationsService {
 
     await workbook.xlsx.write(res);
     res.end();
+  }
+
+  // helper fucntions
+
+  private async handleUploads(
+    files?: Express.Multer.File | Express.Multer.File[],
+    folder?: string
+  ): Promise<
+    Array<{
+      path: string;
+      url: string;
+      fileName: string;
+      fileSize: number;
+      mimeType: string;
+    }>
+  > {
+    if (!files) return [];
+
+    // Multiple files
+    if (Array.isArray(files)) {
+      return await this.storageService.uploadFiles(files, folder || "files");
+    }
+
+    // Single file
+    const uploaded = await this.storageService.uploadOneFile(
+      files,
+      folder || "files"
+    );
+    return [uploaded]; // normalize to array
   }
 }

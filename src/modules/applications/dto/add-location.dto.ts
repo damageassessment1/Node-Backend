@@ -3,11 +3,11 @@ import { IsJSON, IsNotEmpty, IsNumberString, IsOptional, IsString } from "class-
 export class AddLocationDto {
   @IsNotEmpty()
   @IsNumberString()
-  latitude: number;
+  latitude: string;
 
   @IsNotEmpty()
   @IsNumberString()
-  longitude: number;
+  longitude: string;
 
 
   @IsNotEmpty()

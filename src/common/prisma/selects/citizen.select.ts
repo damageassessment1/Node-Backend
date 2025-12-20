@@ -6,6 +6,7 @@ export const baseCitizenSelect = {
   grandfather_name: true,
   family_name: true,
   full_name: true,
+  family_members_number:true,
   phone_number: true,
   verification_status: true,
   status: true,

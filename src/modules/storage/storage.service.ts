@@ -55,17 +55,17 @@ export class StorageService {
   }
 
 
-  async uploadPDF(file: Express.Multer.File): Promise<{
+  async uploadOneFile(file: Express.Multer.File,folder:string): Promise<{
     path: string;
     url: string;
     fileName: string;
     fileSize: number;
     mimeType: string;
   }> {
-    return await this.uploadFile(file, "pdfs");
+    return await this.uploadFile(file, folder);
   }
 
-  async uploadPDFs(files: Express.Multer.File[]): Promise<
+  async uploadFiles(files: Express.Multer.File[],folder:string): Promise<
     Array<{
       path: string;
       url: string;
@@ -75,7 +75,7 @@ export class StorageService {
     }>
   > {
     const uploadPromises = files.map(
-      async (file) => await this.uploadFile(file, "pdfs")
+      async (file) => await this.uploadFile(file, folder)
     );
 
     return await Promise.all(uploadPromises);
