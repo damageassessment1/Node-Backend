@@ -1,5 +1,5 @@
 import { PipeTransform, Injectable, BadRequestException } from "@nestjs/common";
-import { Express } from "express";
+
 
 @Injectable()
 export class UploadsValidationPipe implements PipeTransform {
@@ -8,9 +8,8 @@ export class UploadsValidationPipe implements PipeTransform {
   ): Record<string, Express.Multer.File[]> {
     if (!uploads) return uploads;
 
-    const MAX_SIZE = 1024 * 1024; // 1MB
-    const allowedImageTypes = ["image/jpeg", "image/png"];
-    const allowedDocTypes = ["application/pdf"];
+    const MAX_SIZE = 1024 * 1024 * 5;  // 5MB
+    const allowedTypes = ["application/pdf","image/jpeg", "image/png"];
 
     for (const [field, files] of Object.entries(uploads)) {
       if (!Array.isArray(files) || files.length === 0) continue;
@@ -33,7 +32,7 @@ export class UploadsValidationPipe implements PipeTransform {
         }
 
         if (field === "beforeWarImage" || field === "afterWarImage") {
-          if (!allowedImageTypes.includes(file.mimetype)) {
+          if (!allowedTypes.includes(file.mimetype)) {
             throw new BadRequestException(
               `${field}[${index}] must be JPEG or PNG`
             );
@@ -41,7 +40,7 @@ export class UploadsValidationPipe implements PipeTransform {
         }
 
         if (field === "ownershipDocuments") {
-          if (!allowedDocTypes.includes(file.mimetype)) {
+          if (!allowedTypes.includes(file.mimetype)) {
             throw new BadRequestException(
               `${field}[${index}] must be a PDF`
             );
