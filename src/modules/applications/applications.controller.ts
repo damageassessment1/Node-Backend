@@ -16,7 +16,7 @@ import { CreateApplicationDto } from "./dto/create-application.dto";
 import { UpdateApplicationDto } from "./dto/update-application.dto";
 import { RolesGuard } from "src/common/guards/roles.guard";
 import { User } from "src/common/decorators/user.decorator";
-import { AddLocationDto } from "./dto/add-location.dto";
+import { AddCurrentLocationDto, AddPreviousLocationDto } from "./dto/add-location.dto";
 import { AddExtraDataDto } from "./dto/add-extradata.dto";
 import { Citizen as CitizenType, LocationType, UserRole } from "@prisma/client";
 import { Citizen } from "src/common/decorators/citizen.decorator";
@@ -40,9 +40,9 @@ export class ApplicationsController {
     return this.service.findAll(user);
   }
 
-  @Get("/my-application")
+  @Get("/my-applications")
   async getMyApplicationInfo(@Citizen() user: CitizenType) {
-    return this.service.getMyApplicationInfo(user);
+    return this.service.getMyApplications(user);
   }
 
   // Add previous location to application
@@ -55,7 +55,7 @@ export class ApplicationsController {
     ])
   )
   async addPreviousLocation(
-    @Body() dto: AddLocationDto,
+    @Body() dto: AddPreviousLocationDto,
 
     @UploadedFiles(new UploadsValidationPipe())
     uploads: {
@@ -66,7 +66,7 @@ export class ApplicationsController {
 
     @Citizen() user: CitizenType
   ) {
-    return this.service.addLocationToApplication(
+    return this.service.createApplicationAndLocation(
       dto,
       LocationType.BEFORE_WAR,
       user,
@@ -81,10 +81,10 @@ export class ApplicationsController {
   // Add current location to application
   @Post("/add-current-location")
   async addCurrentLocation(
-    @Body() dto: AddLocationDto,
+    @Body() dto: AddCurrentLocationDto,
     @Citizen() user: CitizenType
   ) {
-    return this.service.addLocationToApplication(
+    return this.service.addCurrentLocation(
       dto,
       LocationType.CURRENT,
       user

@@ -9,13 +9,16 @@ import { CreateApplicationDto } from "./dto/create-application.dto";
 import { UpdateApplicationDto } from "./dto/update-application.dto";
 import { applicationSelect } from "src/common/prisma/selects";
 import { UpdateApplicationLocationDto } from "./dto/update-application-location.dto";
-import { AddLocationDto } from "./dto/add-location.dto";
 import { AddExtraDataDto } from "./dto/add-extradata.dto";
 import { generateApplicationId } from "src/common/utils";
 import { Citizen, LocationType } from "@prisma/client";
 import * as ExcelJS from "exceljs";
 import { Response } from "express";
 import { StorageService } from "../storage/storage.service";
+import {
+  AddCurrentLocationDto,
+  AddPreviousLocationDto,
+} from "./dto/add-location.dto";
 
 @Injectable()
 export class ApplicationsService {
@@ -183,45 +186,26 @@ export class ApplicationsService {
     });
   }
 
-  async addLocationToApplication(
-    dto: AddLocationDto,
+  async createApplicationAndLocation(
+    dto: AddPreviousLocationDto,
     type: LocationType,
-    user: Citizen,
+    citizen: Citizen,
     uploads?: {
       beforeWarImage?: Express.Multer.File;
       afterWarImage?: Express.Multer.File;
       ownershipDocuments?: Express.Multer.File[];
     }
   ) {
-    const app = await this.prisma.application.findFirst({
-      where: { citizenId: user.id },
-      include: { locations: true },
-    });
 
-    if (!app) throw new NotFoundException("Application not found");
-
-    if (type === LocationType.CURRENT) {
-      if (app.locations.some((l) => l.type === LocationType.CURRENT)) {
-        throw new ConflictException("This user already has a current location");
-      }
-      const location = await this.prisma.location.create({
-        data: {
-          ...dto,
-          citizenId: app.citizenId,
-          type,
-        },
-      });
-      return location;
-    }
-
-    let extraData = dto.extraData ? JSON.parse(dto.extraData) : {};
+    const { extraData, ...locationDto } = dto;
+    let applicationExtraData = extraData ? JSON.parse(dto.extraData) : {};
 
     if (uploads && uploads.beforeWarImage) {
       const [file] = await this.handleUploads(
         uploads.beforeWarImage,
         "before_war_image"
       );
-      extraData.beforeWarImage = file;
+      applicationExtraData.beforeWarImage = file;
     }
 
     if (uploads && uploads.afterWarImage) {
@@ -229,44 +213,74 @@ export class ApplicationsService {
         uploads.afterWarImage,
         "after_war_image"
       );
-      extraData.afterWarImage = file;
+      applicationExtraData.afterWarImage = file;
     }
 
     if (uploads && uploads.ownershipDocuments) {
-      extraData.ownershipDocuments = await this.handleUploads(
+      applicationExtraData.ownershipDocuments = await this.handleUploads(
         uploads.ownershipDocuments,
         "ownership_documents"
       );
     }
 
-    // Create location for the citizen
+   const result =  await this.prisma.$transaction(async (prisma) => {
+      // Create application for the citizen
+      const application = await prisma.application.create({
+        data: {
+          id: generateApplicationId(),
+          citizenId: citizen.id,
+          extraData: applicationExtraData,
+        },
+      });
+
+      // Create location for the citizen
+      const location = await prisma.location.create({
+        data: {
+          ...locationDto,
+          citizenId: application.citizenId,
+          type,
+          applicationId: application.id,
+        },
+      });
+
+      // The transaction commits if both operations are successful
+      return { application, location };
+    });
+
+    return result
+  }
+
+  async addCurrentLocation(
+    dto: AddCurrentLocationDto,
+    type: LocationType,
+    citizen: Citizen
+  ) {
+    const currentLocation = this.prisma.location.findMany({
+      where: { citizenId: citizen.id, type: LocationType.CURRENT },
+    });
+
+    const currentLocationExists = (await currentLocation).length >= 1;
+    if (currentLocationExists) {
+      throw new NotFoundException("This user already has a current location");
+    }
+
     const location = await this.prisma.location.create({
       data: {
         ...dto,
-        extraData: JSON.stringify(extraData),
-        citizenId: app.citizenId,
+        citizenId: citizen.id,
         type,
-        applicationId: app.id,
       },
     });
     return location;
   }
 
-  async getMyApplicationInfo(user: Citizen) {
-    const app = await this.prisma.application.findFirst({
+  async getMyApplications(user: Citizen) {
+    const applications = await this.prisma.application.findMany({
       where: { citizenId: user.id },
       select: applicationSelect,
     });
-    if (!app) throw new NotFoundException("Application not found");
-    if (app.extraData && typeof app.extraData === "string") {
-      try {
-        app.extraData = JSON.parse(app.extraData);
-      } catch {
-        // If parsing fails, leave as is
-        console.log("Failed to parse extraData JSON");
-      }
-    }
-    return app;
+
+    return applications
   }
 
   async exportApplications(res: Response) {
@@ -307,6 +321,8 @@ export class ApplicationsService {
     await workbook.xlsx.write(res);
     res.end();
   }
+
+
 
   // helper fucntions
 

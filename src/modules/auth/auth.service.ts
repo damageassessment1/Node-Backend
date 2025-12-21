@@ -160,13 +160,7 @@ export class AuthService {
       },
     });
 
-    const application = await this.prisma.application.create({
-      data: { id: generateApplicationId(), citizenId: updated.id },
-      include: { locations: true },
-    });
-
-    const { password: _, ...safeCitizen } = updated;
-    const user = { ...safeCitizen, application: { ...application } };
+    const { password: _, ...user } = updated;
 
     const token = this.jwtService.sign({
       sub: updated.id,
@@ -212,8 +206,7 @@ export class AuthService {
     });
 
     // Remove password and send user object with application
-    const { password: _, applications, ...safeCitizen } = citizen;
-    const user = { ...safeCitizen, application: citizen.applications[0] };
+    const { password: _, ...user } = citizen;
 
     return {
       success: true,

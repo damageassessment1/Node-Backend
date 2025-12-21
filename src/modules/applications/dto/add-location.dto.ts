@@ -1,6 +1,6 @@
 import { IsJSON, IsNotEmpty, IsNumberString, IsOptional, IsString } from "class-validator";
 
-export class AddLocationDto {
+export class AddPreviousLocationDto {
   @IsNotEmpty()
   @IsNumberString()
   latitude: string;
@@ -19,7 +19,28 @@ export class AddLocationDto {
   @IsString()
   neighborhood: string;
 
-  @IsOptional()
+  @IsNotEmpty()
   @IsJSON()
-  extraData?:string
+  extraData:string
+}
+
+
+export class AddCurrentLocationDto {
+  @IsNotEmpty()
+  @IsNumberString()
+  latitude: string;
+
+  @IsNotEmpty()
+  @IsNumberString()
+  longitude: string;
+
+
+  @IsNotEmpty()
+  @IsString()
+  address: string;
+  
+
+  @IsNotEmpty()
+  @IsString()
+  neighborhood: string;
 }
