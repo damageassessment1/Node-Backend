@@ -15,12 +15,7 @@ export const baseCitizenSelect = {
 } as const;
 
 export const citizenSelect = {
-  id: true,
-  national_id: true,
-  first_name: true,
-  family_name: true,
-  verification_status: true,
-  status: true,
+  ...baseCitizenSelect,
   locations: {
     select: {
       id: true,
@@ -41,6 +36,5 @@ export const citizenSelect = {
       updatedAt: true,
     },
   },
-  createdAt: true,
-  updatedAt: true,
+  
 } as const;

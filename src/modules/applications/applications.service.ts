@@ -7,7 +7,7 @@ import {
 import { PrismaService } from "../database/prisma.service";
 import { CreateApplicationDto } from "./dto/create-application.dto";
 import { UpdateApplicationDto } from "./dto/update-application.dto";
-import { applicationSelect } from "src/common/prisma/selects";
+import { applicationSelect, citizenSelect } from "src/common/prisma/selects";
 import { UpdateApplicationLocationDto } from "./dto/update-application-location.dto";
 import { AddExtraDataDto } from "./dto/add-extradata.dto";
 import { generateApplicationId } from "src/common/utils";
@@ -19,6 +19,8 @@ import {
   AddCurrentLocationDto,
   AddPreviousLocationDto,
 } from "./dto/add-location.dto";
+import { baseApplicationSelect } from "src/common/prisma/selects/application.select";
+import { serializeMyApplicationsRes } from "src/common/serializers/application.serializer";
 
 @Injectable()
 export class ApplicationsService {
@@ -196,7 +198,6 @@ export class ApplicationsService {
       ownershipDocuments?: Express.Multer.File[];
     }
   ) {
-
     const { extraData, ...locationDto } = dto;
     let applicationExtraData = extraData ? JSON.parse(dto.extraData) : {};
 
@@ -223,7 +224,7 @@ export class ApplicationsService {
       );
     }
 
-   const result =  await this.prisma.$transaction(async (prisma) => {
+    const result = await this.prisma.$transaction(async (prisma) => {
       // Create application for the citizen
       const application = await prisma.application.create({
         data: {
@@ -247,7 +248,7 @@ export class ApplicationsService {
       return { application, location };
     });
 
-    return result
+    return result;
   }
 
   async addCurrentLocation(
@@ -274,13 +275,18 @@ export class ApplicationsService {
     return location;
   }
 
-  async getMyApplications(user: Citizen) {
+  async getMyApplications(citizen: Citizen) {
     const applications = await this.prisma.application.findMany({
-      where: { citizenId: user.id },
-      select: applicationSelect,
+      where: { citizenId: citizen.id },
+      select: baseApplicationSelect,
     });
 
-    return applications
+    const citizenWithLocation = await this.prisma.citizen.findUnique({
+      where: { id: citizen.id },
+      select: citizenSelect,
+    });
+
+    return serializeMyApplicationsRes(applications, citizenWithLocation);
   }
 
   async exportApplications(res: Response) {
@@ -322,8 +328,6 @@ export class ApplicationsService {
     res.end();
   }
 
-
-
   // helper fucntions
 
   private async handleUploads(
@@ -352,4 +356,6 @@ export class ApplicationsService {
     );
     return [uploaded]; // normalize to array
   }
+
+
 }

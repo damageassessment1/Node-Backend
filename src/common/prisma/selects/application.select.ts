@@ -1,3 +1,31 @@
+
+export const baseApplicationSelect = {
+  id: true,
+  citizenId: true,
+  status: true,
+  notes: true,
+  extraData: true, // Include extraData field
+  createdById: true,
+  createdAt: true,
+  updatedAt: true,
+  locations: {
+    select: {
+      id: true,
+      type: true,
+      address: true,
+      neighborhood: true,
+      status: true,
+      governorate: true,
+      town: true,
+      street: true,
+      block_number: true,
+      house_number: true,
+      latitude: true,
+      longitude: true,
+      notes: true,
+    },
+  },
+} as const;
 export const applicationSelect = {
   id: true,
   citizenId: true,
