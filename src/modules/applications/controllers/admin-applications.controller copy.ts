@@ -17,8 +17,8 @@ import { ApplicationsService } from "../applications.service";
 import { CreateApplicationDto, UpdateApplicationDto } from "../dto";
 import {
   ADMIN_APPLICATIONS_ROUTE_PREFIX,
-  ADMIN_ROUTES,
   APPLICATION_ID_PARAM,
+  ROUTES,
 } from "src/common/constats/routes.constants";
 
 @Controller(ADMIN_APPLICATIONS_ROUTE_PREFIX)
@@ -37,7 +37,7 @@ export class AdminApplicationsController {
     return this.service.findAll(user);
   }
 
-  @Get(ADMIN_ROUTES.APPLICATIONS_EXPORT)
+  @Get(ROUTES.ADMIN.ACTIONS.EXPORT)
   @UseGuards(RolesGuard(UserRole.ADMIN))
   async exportApplications(@Res() res: Response) {
     await this.service.exportApplications(res);

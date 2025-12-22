@@ -6,20 +6,20 @@ import { User as UserType } from "@prisma/client";
 import { User } from "src/common/decorators/user.decorator";
 import {
   ADMIN_AUTH_ROUTE_PREFIX,
-  AUTH_ROUTES,
+  ROUTES,
 } from "src/common/constats/routes.constants";
 
 @Controller(ADMIN_AUTH_ROUTE_PREFIX)
 export class AdminAuthController {
   constructor(private authService: AuthService) {}
 
-  @Post(AUTH_ROUTES.ADMIN.SIGNIN)
+  @Post(ROUTES.ADMIN.AUTH.SIGNIN)
   @Public()
   async signIn(@Body() dto: SigninDto) {
     return this.authService.adminSignIn(dto);
   }
 
-  @Post(AUTH_ROUTES.ADMIN.CHANGE_PASSWORD)
+  @Post(ROUTES.ADMIN.AUTH.CHANGE_PASSWORD)
   async changePassword(@Body() dto: ChangePasswordDto, @User() user: UserType) {
     return this.authService.changePassword(dto, user.id, "user");
   }

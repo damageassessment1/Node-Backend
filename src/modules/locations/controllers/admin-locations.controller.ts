@@ -16,7 +16,6 @@ import { UpdateLocationDto } from "../dto/update-location.dto";
 import { UserRole } from "@prisma/client";
 import {
   ADMIN_LOCATIONS_ROUTE_PREFIX,
-  ADMIN_ROUTES,
   LOCATION_ID_PARAM,
 } from "src/common/constats/routes.constants";
 

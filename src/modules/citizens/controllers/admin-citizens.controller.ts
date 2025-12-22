@@ -20,8 +20,8 @@ import { CreateCitizenDto } from "../dto/create-citizen.dto";
 import { UpdateCitizenDto } from "../dto/update-citizen.dto";
 import {
   ADMIN_CITIZENS_ROUTE_PREFIX,
-  ADMIN_ROUTES,
   CITIZEN_ID_PARAM,
+  ROUTES,
 } from "src/common/constats/routes.constants";
 @Controller(ADMIN_CITIZENS_ROUTE_PREFIX)
 export class AdminCitizensController {
@@ -40,7 +40,7 @@ export class AdminCitizensController {
     return this.svc.findAll(effectiveUser);
   }
 
-  @Get(ADMIN_ROUTES.CITIZENS_EXPORT)
+  @Get(ROUTES.ADMIN.ACTIONS.EXPORT)
   @UseGuards(RolesGuard(UserRole.ADMIN))
   async exportCitizens(@Res() res: Response) {
     await this.svc.exportCitizens(res);

@@ -16,7 +16,7 @@ import { UploadsValidationPipe } from "src/common/validators/upload-validation.p
 import { Citizen } from "src/common/decorators/citizen.decorator";
 import {
   CITIZEN_LOCATIONS_ROUTE_PREFIX,
-  CITIZEN_ROUTES,
+  ROUTES,
 } from "src/common/constats/routes.constants";
 
 @Controller(CITIZEN_LOCATIONS_ROUTE_PREFIX)
@@ -24,7 +24,7 @@ export class CitizenLocationsController {
   constructor(private readonly service: LocationsService) {}
 
   // Add previous location to application
-  @Post(CITIZEN_ROUTES.LOCATIONS.PREVIOUS)
+  @Post(ROUTES.CITIZEN.LOCATIONS.PREVIOUS)
   @UseInterceptors(
     FileFieldsInterceptor([
       { name: "beforeWarImage", maxCount: 1 },
@@ -57,7 +57,7 @@ export class CitizenLocationsController {
   }
 
   // Add current location to application
-  @Post(CITIZEN_ROUTES.LOCATIONS.CURRENT)
+  @Post(ROUTES.CITIZEN.LOCATIONS.CURRENT)
   async addCurrentLocation(
     @Body() dto: AddCurrentLocationDto,
     @Citizen() user: CitizenType

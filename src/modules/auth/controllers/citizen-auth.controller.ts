@@ -12,7 +12,7 @@ import { Citizen as CitizenType } from "@prisma/client";
 import { Citizen } from "src/common/decorators/citizen.decorator";
 import {
   CITIZEN_AUTH_ROUTE_PREFIX,
-  AUTH_ROUTES,
+  ROUTES,
 } from "src/common/constats/routes.constants";
 
 @Controller(CITIZEN_AUTH_ROUTE_PREFIX)
@@ -22,7 +22,7 @@ export class CitizenAuthController {
   /**
    * Step 1: Verify National ID
    */
-  @Post(AUTH_ROUTES.CITIZEN.VERIFY_ID)
+  @Post(ROUTES.CITIZEN.AUTH.VERIFY_ID)
   @Public()
   async verifyNationalId(@Body() dto: VerifyIdDto) {
     return this.authService.verifyNationalId(dto.nationalId);
@@ -30,7 +30,7 @@ export class CitizenAuthController {
   /**
    * Step 2: Verify Personal Questions
    */
-  @Post(AUTH_ROUTES.CITIZEN.VERIFY_QUESTIONS)
+  @Post(ROUTES.CITIZEN.AUTH.VERIFY_QUESTIONS)
   @Public()
   async verifyQuestions(@Body() dto: VerifyQuestionsDto) {
     return this.authService.verifySecurityQuestions(
@@ -42,7 +42,7 @@ export class CitizenAuthController {
   /**
    * Step 3: Complete Signup
    */
-  @Post(AUTH_ROUTES.CITIZEN.COMPLETE_SIGNUP)
+  @Post(ROUTES.CITIZEN.AUTH.COMPLETE_SIGNUP)
   @Public()
   async signup(@Body() dto: CompleteSignupDto) {
     return this.authService.completeCitizenSignup(dto);
@@ -51,13 +51,13 @@ export class CitizenAuthController {
   /**
    * Step 3: Citizen Login
    */
-  @Post(AUTH_ROUTES.CITIZEN.LOGIN)
+  @Post(ROUTES.CITIZEN.AUTH.LOGIN)
   @Public()
   async citizenLogin(@Body() dto: CitizenLoginDto) {
     return this.authService.citizenLogin(dto.nationalId, dto.password);
   }
 
-  @Post(AUTH_ROUTES.CITIZEN.CHANGE_PASSWORD)
+  @Post(ROUTES.CITIZEN.AUTH.CHANGE_PASSWORD)
   async changePassword(
     @Body() dto: ChangePasswordDto,
     @Citizen() citizen: CitizenType

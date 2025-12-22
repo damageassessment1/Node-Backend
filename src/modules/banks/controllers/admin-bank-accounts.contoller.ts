@@ -22,7 +22,7 @@ import { Response } from "express";
 import {
   ACCOUNT_ID_PARAM,
   ADMIN_BANK_ACCOUNTS_ROUTE_PREFIX,
-  ADMIN_ROUTES,
+  ROUTES,
 } from "src/common/constats/routes.constants";
 
 @Controller(ADMIN_BANK_ACCOUNTS_ROUTE_PREFIX)
@@ -44,7 +44,7 @@ export class AdminBankAccountsController {
   // =====================
   // Admin exports
   // =====================
-  @Get(ADMIN_ROUTES.BANK_ACCOUNTS_EXPORT)
+  @Get(ROUTES.ADMIN.ACTIONS.EXPORT)
   @UseGuards(RolesGuard(UserRole.ADMIN))
   exportBankAccounts(@Res() res: Response) {
     return this.service.exportBankAccounts(res);
