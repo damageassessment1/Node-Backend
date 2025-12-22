@@ -5,7 +5,7 @@ import {
 import { BanksService } from "../banks.service";
 
 @Controller('banks')
-export class BanksController {
+export class CitizenBankAccountsController {
   constructor(private service: BanksService) {}
 
   @Get()

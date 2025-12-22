@@ -76,6 +76,7 @@ async function bootstrap() {
 
   // Enable CORS
   app.enableCors();
+  app.setGlobalPrefix('api');
 
   await app.listen(process.env.PORT ?? 3000);
 }

@@ -10,17 +10,16 @@ import {
   Delete,
   Res,
 } from "@nestjs/common";
-import { CitizensService } from "./citizens.service";
-import { CreateCitizenDto } from "./dto/create-citizen.dto";
-import { UpdateCitizenDto } from "./dto/update-citizen.dto";
 import { RolesGuard } from "src/common/guards/roles.guard";
 import { User } from "src/common/decorators/user.decorator";
 import { MaybeSupervisor } from "src/common/decorators/maybe-supervisor.decorator";
-import { CreateLocationDto } from "./dto/create-location.dto";
 import { Response } from "express";
 import { UserRole } from "@prisma/client";
-@Controller("citizens")
-export class CitizensController {
+import { CitizensService } from "../citizens.service";
+import { CreateCitizenDto } from "../dto/create-citizen.dto";
+import { UpdateCitizenDto } from "../dto/update-citizen.dto";
+@Controller("admin/citizens")
+export class AdminCitizensController {
   constructor(private svc: CitizensService) {}
 
   @Post()
@@ -69,12 +68,12 @@ export class CitizensController {
     return this.svc.remove(id);
   }
 
-  @Post(":id/locations")
-  @UseGuards(RolesGuard(UserRole.ADMIN))
-  createLocation(
-    @Param("id", ParseIntPipe) id: number,
-    @Body() dto: CreateLocationDto
-  ) {
-    return this.svc.createLocation(id, dto);
-  }
+//   @Post(":id/locations")
+//   @UseGuards(RolesGuard(UserRole.ADMIN))
+//   createLocation(
+//     @Param("id", ParseIntPipe) id: number,
+//     @Body() dto: CreateLocationDto
+//   ) {
+//     return this.svc.createLocation(id, dto);
+//   }
 }

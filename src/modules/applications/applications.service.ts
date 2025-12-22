@@ -9,16 +9,10 @@ import { CreateApplicationDto } from "./dto/create-application.dto";
 import { UpdateApplicationDto } from "./dto/update-application.dto";
 import { applicationSelect, citizenSelect } from "src/common/prisma/selects";
 import { UpdateApplicationLocationDto } from "./dto/update-application-location.dto";
-import { AddExtraDataDto } from "./dto/add-extradata.dto";
 import { generateApplicationId } from "src/common/utils";
-import { Citizen, LocationType } from "@prisma/client";
+import { Citizen } from "@prisma/client";
 import * as ExcelJS from "exceljs";
 import { Response } from "express";
-import { StorageService } from "../storage/storage.service";
-import {
-  AddCurrentLocationDto,
-  AddPreviousLocationDto,
-} from "./dto/add-location.dto";
 import { baseApplicationSelect } from "src/common/prisma/selects/application.select";
 import { serializeMyApplicationsRes } from "src/common/serializers/application.serializer";
 
@@ -26,7 +20,6 @@ import { serializeMyApplicationsRes } from "src/common/serializers/application.s
 export class ApplicationsService {
   constructor(
     private prisma: PrismaService,
-    private readonly storageService: StorageService
   ) {}
 
   async create(dto: CreateApplicationDto, user: any) {
@@ -63,26 +56,7 @@ export class ApplicationsService {
       },
     });
 
-    // // If locationId provided, link it to the application
-    // if (dto.locationId) {
-    //   const location = await this.prisma.location.findUnique({
-    //     where: { id: dto.locationId },
-    //   });
-    //   if (!location) throw new NotFoundException("Location not found");
-    //   if (location.applicationId)
-    //     throw new ForbiddenException("Location already linked to an application");
-    //   // Ensure the location belongs to the specified citizen
-    //   if (location.citizenId !== dto.citizenId)
-    //     throw new ForbiddenException(
-    //       "Location does not belong to the specified citizen"
-    //     );
-
-    //   // Link location to application
-    //   await this.prisma.location.update({
-    //     where: { id: dto.locationId },
-    //     data: { applicationId: app.id },
-    //   });
-    // }
+   
 
     // Return application with all details
     const result = await this.prisma.application.findUnique({
@@ -188,92 +162,7 @@ export class ApplicationsService {
     });
   }
 
-  async createApplicationAndLocation(
-    dto: AddPreviousLocationDto,
-    type: LocationType,
-    citizen: Citizen,
-    uploads?: {
-      beforeWarImage?: Express.Multer.File;
-      afterWarImage?: Express.Multer.File;
-      ownershipDocuments?: Express.Multer.File[];
-    }
-  ) {
-    const { extraData, ...locationDto } = dto;
-    let applicationExtraData = extraData ? JSON.parse(dto.extraData) : {};
-
-    if (uploads && uploads.beforeWarImage) {
-      const [file] = await this.handleUploads(
-        uploads.beforeWarImage,
-        "before_war_image"
-      );
-      applicationExtraData.beforeWarImage = file;
-    }
-
-    if (uploads && uploads.afterWarImage) {
-      const [file] = await this.handleUploads(
-        uploads.afterWarImage,
-        "after_war_image"
-      );
-      applicationExtraData.afterWarImage = file;
-    }
-
-    if (uploads && uploads.ownershipDocuments) {
-      applicationExtraData.ownershipDocuments = await this.handleUploads(
-        uploads.ownershipDocuments,
-        "ownership_documents"
-      );
-    }
-
-    const result = await this.prisma.$transaction(async (prisma) => {
-      // Create application for the citizen
-      const application = await prisma.application.create({
-        data: {
-          id: generateApplicationId(),
-          citizenId: citizen.id,
-          extraData: applicationExtraData,
-        },
-      });
-
-      // Create location for the citizen
-      const location = await prisma.location.create({
-        data: {
-          ...locationDto,
-          citizenId: application.citizenId,
-          type,
-          applicationId: application.id,
-        },
-      });
-
-      // The transaction commits if both operations are successful
-      return { application, location };
-    });
-
-    return result;
-  }
-
-  async addCurrentLocation(
-    dto: AddCurrentLocationDto,
-    type: LocationType,
-    citizen: Citizen
-  ) {
-    const currentLocation = this.prisma.location.findMany({
-      where: { citizenId: citizen.id, type: LocationType.CURRENT },
-    });
-
-    const currentLocationExists = (await currentLocation).length >= 1;
-    if (currentLocationExists) {
-      throw new NotFoundException("This user already has a current location");
-    }
-
-    const location = await this.prisma.location.create({
-      data: {
-        ...dto,
-        citizenId: citizen.id,
-        type,
-      },
-    });
-    return location;
-  }
+ 
 
   async getMyApplications(citizen: Citizen) {
     const applications = await this.prisma.application.findMany({
@@ -287,6 +176,19 @@ export class ApplicationsService {
     });
 
     return serializeMyApplicationsRes(applications, citizenWithLocation);
+  }
+
+
+  async trackApplicationById(id: string) {
+    const application = await this.prisma.application.findUnique({
+      where: { id },
+    });
+
+    if (!application) {
+      throw new Error("الطلب غير موجود");
+    }
+
+    return application;
   }
 
   async exportApplications(res: Response) {
@@ -327,35 +229,5 @@ export class ApplicationsService {
     await workbook.xlsx.write(res);
     res.end();
   }
-
-  // helper fucntions
-
-  private async handleUploads(
-    files?: Express.Multer.File | Express.Multer.File[],
-    folder?: string
-  ): Promise<
-    Array<{
-      path: string;
-      url: string;
-      fileName: string;
-      fileSize: number;
-      mimeType: string;
-    }>
-  > {
-    if (!files) return [];
-
-    // Multiple files
-    if (Array.isArray(files)) {
-      return await this.storageService.uploadFiles(files, folder || "files");
-    }
-
-    // Single file
-    const uploaded = await this.storageService.uploadOneFile(
-      files,
-      folder || "files"
-    );
-    return [uploaded]; // normalize to array
-  }
-
 
 }

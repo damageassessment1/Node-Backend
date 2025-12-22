@@ -15,9 +15,10 @@ import { UsersService } from "./users.service";
 import { CreateUserDto, UpdateUserDto } from "./dto";
 import { RolesGuard } from "src/common/guards/roles.guard";
 import { Response } from "express";
-import { UserRole } from "@prisma/client";
+import { UserRole ,User as UserType} from "@prisma/client";
+import { User } from "src/common/decorators/user.decorator";
 
-@Controller("users")
+@Controller("admin/users")
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
@@ -50,8 +51,8 @@ export class UsersController {
 
   @Delete(":id")
   @UseGuards(RolesGuard(UserRole.ADMIN))
-  remove(@Param("id", ParseIntPipe) id: number) {
-    return this.usersService.remove(id);
+  remove(@Param("id", ParseIntPipe) id: number,@User() user:UserType) {
+    return this.usersService.remove(id,user);
   }
 
   @Get("search-supervisors")

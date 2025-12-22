@@ -23,7 +23,7 @@ import { User } from "src/common/decorators/user.decorator";
 import { Response } from "express";
 
 @Controller('bank-accounts')
-export class BankAccountsController {
+export class AdminBankAccountsController {
   constructor(private service: BanksService) {}
 
 

@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Post, Req } from "@nestjs/common";
 import { Request } from "express";
-import { AuthService } from "./auth.service";
+import { AuthService } from "../auth.service";
 import {
   ChangePasswordDto,
   CitizenLoginDto,
@@ -8,14 +8,14 @@ import {
   SigninDto,
   VerifyIdDto,
   VerifyQuestionsDto,
-} from "./dto";
+} from "../dto";
 import { Public } from "src/common/decorators/public-endpoint.decorator";
 import { Citizen as CitizenType, User as UserType } from "@prisma/client";
 import { Citizen } from "src/common/decorators/citizen.decorator";
 import { User } from "src/common/decorators/user.decorator";
 
-@Controller("auth")
-export class AuthController {
+@Controller("auth/citizen")
+export class CitizenAuthController {
   constructor(private authService: AuthService) {}
 
   /**
@@ -54,12 +54,6 @@ export class AuthController {
   @Public()
   async citizenLogin(@Body() dto: CitizenLoginDto) {
     return this.authService.citizenLogin(dto.nationalId, dto.password);
-  }
-
-  @Post("signin")
-  @Public()
-  async signIn(@Body() dto: SigninDto) {
-    return this.authService.signIn(dto);
   }
 
   @Post("change-password")

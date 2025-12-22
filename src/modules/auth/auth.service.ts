@@ -526,7 +526,7 @@ export class AuthService {
     return shuffled.slice(0, Math.min(count, shuffled.length));
   }
 
-  async signIn(dto: SigninDto) {
+  async adminSignIn(dto: SigninDto) {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
       select: { ...baseUserSelect, password: true },

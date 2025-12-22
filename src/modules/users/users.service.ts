@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ConflictException,
   ForbiddenException,
+  BadRequestException,
 } from "@nestjs/common";
 import { PrismaService } from "../database/prisma.service";
 import { CreateUserDto, UpdateUserDto } from "./dto";
@@ -10,7 +11,7 @@ import * as bcrypt from "bcryptjs";
 import { baseUserSelect } from "src/common/prisma/selects";
 import * as ExcelJS from "exceljs";
 import { Response } from "express";
-import { UserRole } from "@prisma/client";
+import { User, UserRole } from "@prisma/client";
 
 
 @Injectable()
@@ -78,13 +79,17 @@ export class UsersService {
     });
   }
 
-  async remove(id: number) {
+  async remove(id: number,authUser:User) {
     const user = await this.prisma.user.findUnique({
       where: { id },
     });
 
     if (!user) {
       throw new NotFoundException("User not found");
+    }
+
+    if(user.id === authUser.id){
+      throw new BadRequestException("you can not delete this user");
     }
 
     return this.prisma.user.delete({

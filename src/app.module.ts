@@ -11,6 +11,7 @@ import { ScheduleModule } from "@nestjs/schedule";
 import { HttpModule } from "@nestjs/axios";
 import { KeepAliveService } from "./keep-alive.service";
 import { BanksModule } from "./modules/banks/banks.module";
+import { DashboardStatsModule } from "./modules/dashboard-stats/dashboard-stats.module";
 // import { KeepAliveService } from "./keep-alive.service";
 
 @Module({
@@ -24,6 +25,7 @@ import { BanksModule } from "./modules/banks/banks.module";
     ApplicationsModule,
     LocationsModule,
     BanksModule,
+    DashboardStatsModule
   ],
   providers: [AppService,KeepAliveService],
   controllers: [AppController],

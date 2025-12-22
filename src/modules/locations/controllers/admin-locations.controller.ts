@@ -8,15 +8,15 @@ import {
   Post,
   UseGuards,
 } from "@nestjs/common";
-import { LocationsService } from "./locations.service";
+import { LocationsService } from "../locations.service";
 import { RolesGuard } from "src/common/guards/roles.guard";
 import { User } from "src/common/decorators/user.decorator";
-import { CreateLocationDto } from "./dto/create-location.dto";
-import { UpdateLocationDto } from "./dto/update-location.dto";
-import { Citizen as CitizenType, UserRole } from "@prisma/client";
+import { CreateLocationDto } from "../dto/create-location.dto";
+import { UpdateLocationDto } from "../dto/update-location.dto";
+import { UserRole } from "@prisma/client";
 
-@Controller("locations")
-export class LocationsController {
+@Controller("admin/locations")
+export class AdminLocationsController {
   constructor(private readonly svc: LocationsService) {}
 
   @Post()
