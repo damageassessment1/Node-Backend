@@ -11,8 +11,7 @@ import { JwtService } from "@nestjs/jwt";
 import { ChangePasswordDto, CompleteSignupDto, SigninDto } from "./dto";
 import { baseUserSelect } from "src/common/prisma/selects";
 import { PrismaService } from "../database/prisma.service";
-import { Citizen, VerificationStatus } from "@prisma/client";
-import { generateApplicationId } from "src/common/utils";
+import { Citizen, User, VerificationStatus } from "@prisma/client";
 
 export interface VerificationQuestion {
   key: string;
@@ -24,7 +23,7 @@ export interface VerificationQuestion {
 export class AuthService {
   constructor(
     private prisma: PrismaService,
-    private jwtService: JwtService
+    private jwtService: JwtService,
   ) {}
 
   async verifyNationalId(nationalId: string) {
@@ -150,7 +149,7 @@ export class AuthService {
         first_name: dto.firstName,
         father_name: dto.fatherName,
         grandfather_name: dto.grandfatherName,
-        family_members_number:dto.familyMembersNumber,
+        family_members_number: dto.familyMembersNumber,
         family_name: dto.familyName,
         full_name: `${dto.firstName} ${dto.fatherName} ${dto.grandfatherName} ${dto.familyName}`,
         phone_number: dto.phoneNumber,
@@ -213,6 +212,183 @@ export class AuthService {
       message: "تم تسجيل الدخول بنجاح",
       user,
       token,
+    };
+  }
+
+  async adminSignIn(dto: SigninDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+      select: { ...baseUserSelect, password: true },
+    });
+    if (!user) throw new UnauthorizedException("Invalid credentials");
+    const isMatch = await bcrypt.compare(dto.password, user.password);
+    if (!isMatch) throw new UnauthorizedException("Invalid credentials");
+
+    const token = await this.jwtService.signAsync({
+      sub: user.id,
+      type: "user",
+      email: user.email,
+      role: user.role,
+    });
+    const { password, ...safeUser } = user as any;
+    return { access_token: token, user: safeUser };
+  }
+
+  // async resetPasswordRequest(email: string) {
+  //   const user = await this.prisma.user.findUnique({
+  //     where: { email },
+  //     select: { id: true, email: true, name: true },
+  //   });
+
+  //   if (!user) {
+  //     throw new UnauthorizedException("البريد الإلكتروني غير موجود");
+  //   }
+
+  //   const resetToken = this.jwtService.sign(
+  //     { sub: user.id, type: "password-reset" },
+  //     { expiresIn: "1h" }
+  //   );
+
+  //   const hashedToken = await bcrypt.hash(resetToken, 10);
+
+  //   await this.prisma.user.update({
+  //     where: { id: user.id },
+  //     data: {
+  //       resetToken: hashedToken,
+  //       resetTokenExpiry: new Date(Date.now() + 3600000),
+  //     },
+  //   });
+
+  //   const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+
+  //   await this.mailService.sendResetPasswordEmail(
+  //     user.email,
+  //     user.name,
+  //     resetLink
+  //   );
+
+  //   return {
+  //     success: true,
+  //     message: "تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني",
+  //   };
+  // }
+
+  // async resetPassword(resetToken: string, newPassword: string) {
+  //   // Verify token
+  //   try {
+  //     this.jwtService.verify(resetToken);
+  //   } catch {
+  //     throw new UnauthorizedException(
+  //       "رابط إعادة التعيين غير صالح أو منتهي الصلاحية"
+  //     );
+  //   }
+
+  //   // Find user with valid reset token
+  //   const users = await this.prisma.user.findMany({
+  //     where: {
+  //       resetTokenExpiry: { gt: new Date() },
+  //     },
+  //     select: { id: true, resetToken: true },
+  //   });
+
+  //   let validUser: any = null;
+  //   for (const user of users) {
+  //     const isValid = await bcrypt.compare(resetToken, user.resetToken || "");
+  //     if (isValid) {
+  //       validUser = user;
+  //       break;
+  //     }
+  //   }
+
+  //   if (!validUser) {
+  //     throw new UnauthorizedException("رابط إعادة التعيين غير صالح");
+  //   }
+
+  //   // Hash new password and update
+  //   const hashedPassword = await bcrypt.hash(newPassword, 10);
+  //   await this.prisma.user.update({
+  //     where: { id: validUser.id },
+  //     data: {
+  //       password: hashedPassword,
+  //       resetToken: null,
+  //       resetTokenExpiry: null,
+  //     },
+  //   });
+
+  //   return {
+  //     success: true,
+  //     message: "تم تحديث كلمة المرور بنجاح",
+  //   };
+  // }
+
+  async adminChangePassword(dto: ChangePasswordDto, user: User) {
+    const existingUser = await this.prisma.user.findUnique({
+      where: { id: user.id },
+      select: { id: true, password: true },
+    });
+
+    if (!existingUser) {
+      throw new UnauthorizedException("المستخدم غير موجود");
+    }
+
+    if (!existingUser.password) {
+      throw new UnauthorizedException("التسجيل غير مكتمل");
+    }
+
+    // Verify old password
+    const isMatch = await bcrypt.compare(dto.oldPassword, user.password);
+    if (!isMatch) {
+      throw new UnauthorizedException("كلمة المرور القديمة غير صحيحة");
+    }
+
+    // Hash and update new password
+    const hashedPassword = await bcrypt.hash(dto.newPassword, 10);
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { password: hashedPassword },
+    });
+
+    return {
+      success: true,
+      message: "تم تغيير كلمة المرور بنجاح",
+    };
+  }
+
+  async citizenChangePassword(dto: ChangePasswordDto, citizen: Citizen) {
+    const existingCitizen = await this.prisma.citizen.findUnique({
+      where: { id: citizen.id },
+      select: { id: true, password: true },
+    });
+
+    if (!existingCitizen) {
+      throw new UnauthorizedException("المستخدم غير موجود");
+    }
+
+    if (!existingCitizen.password) {
+      throw new UnauthorizedException("التسجيل غير مكتمل");
+    }
+
+    // Verify old password
+    const isMatch = await bcrypt.compare(
+      dto.oldPassword,
+      existingCitizen.password
+    );
+    if (!isMatch) {
+      throw new UnauthorizedException("كلمة المرور القديمة غير صحيحة");
+    }
+
+    // Hash and update new password
+    const hashedPassword = await bcrypt.hash(dto.newPassword, 10);
+
+    await this.prisma.citizen.update({
+      where: { id: existingCitizen.id },
+      data: { password: hashedPassword },
+    });
+
+    return {
+      success: true,
+      message: "تم تغيير كلمة المرور بنجاح",
     };
   }
 
@@ -524,153 +700,5 @@ export class AuthService {
   ): VerificationQuestion[] {
     const shuffled = [...questions].sort(() => Math.random() - 0.5);
     return shuffled.slice(0, Math.min(count, shuffled.length));
-  }
-
-  async adminSignIn(dto: SigninDto) {
-    const user = await this.prisma.user.findUnique({
-      where: { email: dto.email },
-      select: { ...baseUserSelect, password: true },
-    });
-    if (!user) throw new UnauthorizedException("Invalid credentials");
-    const isMatch = await bcrypt.compare(dto.password, user.password);
-    if (!isMatch) throw new UnauthorizedException("Invalid credentials");
-
-    const token = await this.jwtService.signAsync({
-      sub: user.id,
-      type: "user",
-      email: user.email,
-      role: user.role,
-    });
-    const { password, ...safeUser } = user as any;
-    return { access_token: token, user: safeUser };
-  }
-
-  // async resetPasswordRequest(email: string) {
-  //   const user = await this.prisma.user.findUnique({
-  //     where: { email },
-  //     select: { id: true, email: true, name: true },
-  //   });
-
-  //   if (!user) {
-  //     throw new UnauthorizedException("البريد الإلكتروني غير موجود");
-  //   }
-
-  //   // Generate reset token (valid for 1 hour)
-  //   const resetToken = this.jwtService.sign(
-  //     { sub: user.id, type: "password-reset" },
-  //     { expiresIn: "1h" }
-  //   );
-
-  //   // Store reset token in database (hashed)
-  //   const hashedToken = await bcrypt.hash(resetToken, 10);
-  //   await this.prisma.user.update({
-  //     where: { id: user.id },
-  //     data: { resetToken: hashedToken, resetTokenExpiry: new Date(Date.now() + 3600000) },
-  //   });
-
-  //   return {
-  //     success: true,
-  //     message: "تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني",
-  //     resetToken, // In production, send via email instead
-  //   };
-  // }
-
-  // async resetPassword(resetToken: string, newPassword: string) {
-  //   // Verify token
-  //   try {
-  //     this.jwtService.verify(resetToken);
-  //   } catch {
-  //     throw new UnauthorizedException("رابط إعادة التعيين غير صالح أو منتهي الصلاحية");
-  //   }
-
-  //   // Find user with valid reset token
-  //   const users = await this.prisma.user.findMany({
-  //     where: {
-  //       resetTokenExpiry: { gt: new Date() },
-  //     },
-  //     select: { id: true, resetToken: true },
-  //   });
-
-  //   let validUser = null;
-  //   for (const user of users) {
-  //     const isValid = await bcrypt.compare(resetToken, user.resetToken || "");
-  //     if (isValid) {
-  //       validUser = user;
-  //       break;
-  //     }
-  //   }
-
-  //   if (!validUser) {
-  //     throw new UnauthorizedException("رابط إعادة التعيين غير صالح");
-  //   }
-
-  //   // Hash new password and update
-  //   const hashedPassword = await bcrypt.hash(newPassword, 10);
-  //   await this.prisma.user.update({
-  //     where: { id: validUser.id },
-  //     data: {
-  //       password: hashedPassword,
-  //       resetToken: null,
-  //       resetTokenExpiry: null,
-  //     },
-  //   });
-
-  //   return {
-  //     success: true,
-  //     message: "تم تحديث كلمة المرور بنجاح",
-  //   };
-  // }
-
-  async changePassword(
-    dto: ChangePasswordDto,
-    userId: number,
-    userType: "citizen" | "user" | null
-  ) {
-    let user;
-    if (userType === "citizen") {
-      user = await this.prisma.citizen.findUnique({
-        where: { id: userId },
-        select: { id: true, password: true },
-      });
-    } else if (userType === "user") {
-      user = await this.prisma.user.findUnique({
-        where: { id: userId },
-        select: { id: true, password: true },
-      });
-    }
-
-    if (!user) {
-      throw new UnauthorizedException("المستخدم غير موجود");
-    }
-
-    if (!user.password) {
-      throw new UnauthorizedException("التسجيل غير مكتمل");
-    }
-
-    // Verify old password
-    const isMatch = await bcrypt.compare(dto.oldPassword, user.password);
-    if (!isMatch) {
-      throw new UnauthorizedException("كلمة المرور القديمة غير صحيحة");
-    }
-
-    // Hash and update new password
-    const hashedPassword = await bcrypt.hash(dto.newPassword, 10);
-
-    if (userType === "citizen") {
-      await this.prisma.citizen.update({
-        where: { id: userId },
-        data: { password: hashedPassword },
-      });
-    } else if (userType === "user") {
-      await this.prisma.user.update({
-        where: { id: userId },
-        data: { password: hashedPassword },
-      });
-    }
-
-    return {
-      success: true,
-      message: "تم تغيير كلمة المرور بنجاح",
-    };
   }
 }

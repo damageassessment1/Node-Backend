@@ -14,6 +14,7 @@ import {
   CITIZEN_AUTH_ROUTE_PREFIX,
   ROUTES,
 } from "src/common/constats/routes.constants";
+import { ResetPasswordDto, ResetPasswordRequestDto } from "../dto/change-password.dto";
 
 @Controller(CITIZEN_AUTH_ROUTE_PREFIX)
 export class CitizenAuthController {
@@ -62,6 +63,21 @@ export class CitizenAuthController {
     @Body() dto: ChangePasswordDto,
     @Citizen() citizen: CitizenType
   ) {
-    return this.authService.changePassword(dto, citizen.id, "citizen");
+    return this.authService.citizenChangePassword(dto, citizen);
   }
+
+  // @Post("reset-password/request")
+  // async resetPasswordRequest(
+  //   @Body() dto: ResetPasswordRequestDto
+  // ) {
+  //   return this.authService.resetPasswordRequest(dto.email);
+  // }
+
+  // // Step 2: Reset password
+  // @Post("reset-password")
+  // async resetPassword(
+  //   @Body() dto: ResetPasswordDto
+  // ) {
+  //   return this.authService.resetPassword(dto.token, dto.newPassword);
+  // }
 }

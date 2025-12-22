@@ -17,6 +17,8 @@ model User {
   remember_token      String?
   createdAt           DateTime      @default(now())
   updatedAt           DateTime      @updatedAt
+  resetToken          String? 
+  resetTokenExpiry    DateTime?
   createdApplications Application[] @relation("UserCreatedApplications")
 
   @@map("users")
@@ -45,6 +47,8 @@ model Citizen {
   extra_data          Json?
   createdAt           DateTime           @default(now())
   updatedAt           DateTime           @updatedAt
+  resetToken          String? 
+  resetTokenExpiry    DateTime?
   verification_status VerificationStatus @default(PENDING)
   locations           Location[]
   applications        Application[]

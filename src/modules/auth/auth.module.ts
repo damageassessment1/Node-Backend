@@ -4,6 +4,7 @@ import { JwtModule } from "@nestjs/jwt";
 import { DatabaseModule } from "../database/database.module";
 import { CitizenAuthController } from "./controllers/citizen-auth.controller";
 import { AdminAuthController } from "./controllers/admin-auth.controller";
+import { MailService } from "src/common/services/mail.service";
 
 @Module({
   imports: [
@@ -13,7 +14,7 @@ import { AdminAuthController } from "./controllers/admin-auth.controller";
     }),
     DatabaseModule,
   ],
-  providers: [AuthService],
+  providers: [AuthService,MailService],
   controllers: [AdminAuthController,CitizenAuthController],
   exports: [JwtModule], // Export JwtModule so other modules can use it
 })
