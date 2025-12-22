@@ -1,32 +1,26 @@
-import { IsOptional, IsString, IsNumber } from "class-validator";
+import { LocationType } from "@prisma/client";
+import { IsOptional, IsString, IsNumber, IsEnum } from "class-validator";
 
 export class UpdateLocationDto {
   @IsOptional()
   @IsString()
-  governorate?: string;
+  address?: string;
+
+ 
+  @IsOptional()
+  @IsString()
+  neighborhood: string;
+
+  @IsOptional()
+  @IsEnum(LocationType)
+  type?:LocationType
 
   @IsOptional()
   @IsString()
-  town?: string;
-
-  @IsOptional()
-  @IsString()
-  street?: string;
-
-  @IsOptional()
-  @IsString()
-  block_number?: string;
-
-  @IsOptional()
-  @IsString()
-  house_number?: string;
-
-  @IsOptional()
-  @IsNumber()
   latitude?: number;
 
   @IsOptional()
-  @IsNumber()
+  @IsString()
   longitude?: number;
 
   @IsOptional()

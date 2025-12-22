@@ -24,28 +24,12 @@ export class LocationsService {
   ) {}
 
   async create(dto: CreateLocationDto, user: any) {
-    if (user?.role !== "admin")
-      throw new ForbiddenException("Insufficient permissions");
-
-    const app = await this.prisma.application.findFirst({
-      where: { citizenId: dto.citizenId },
-      include: { locations: true },
-    });
-
-    if (!app) throw new NotFoundException("Application not found");
-
-    if (app.locations.some((loc) => loc.type === dto.type)) {
-      throw new ForbiddenException(
-        `Application already has a ${dto.type} location`
-      );
-    }
-
     const loc = await this.prisma.location.create({
       data: {
         ...dto,
         citizenId: dto.citizenId,
-        applicationId: app.id,
       },
+      select:locationSelect
     });
 
     return loc;
@@ -73,8 +57,7 @@ export class LocationsService {
   async update(id: number, dto: UpdateLocationDto, user: any) {
     if (!id || typeof id !== "number" || isNaN(id))
       throw new BadRequestException("Valid numeric id param is required");
-    if (user?.role !== "admin")
-      throw new ForbiddenException("Insufficient permissions");
+
     const existing = await this.prisma.location.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException("Location not found");
     const updated = await this.prisma.location.update({
@@ -88,8 +71,7 @@ export class LocationsService {
   async remove(id: number, user: any) {
     if (!id || typeof id !== "number" || isNaN(id))
       throw new BadRequestException("Valid numeric id param is required");
-    if (user?.role !== "admin")
-      throw new ForbiddenException("Insufficient permissions");
+  
     const existing = await this.prisma.location.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException("Location not found");
     // Unlink application if any

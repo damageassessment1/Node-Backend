@@ -24,23 +24,11 @@ export class ApplicationsService {
 
   async create(dto: CreateApplicationDto, user: any) {
     // Only admin can create
-    if (user?.role !== "admin")
-      throw new ForbiddenException("Insufficient permissions");
-
     // Verify citizen exists
     const citizen = await this.prisma.citizen.findUnique({
       where: { id: dto.citizenId },
     });
     if (!citizen) throw new NotFoundException("Citizen not found");
-
-    // Check if citizen already has an application
-    const existingApplication = await this.prisma.application.findUnique({
-      where: { citizenId: dto.citizenId },
-    });
-    if (existingApplication)
-      throw new ConflictException(
-        "An application has already been created for this citizen"
-      );
 
     // Generate custom application ID
     const customId = generateApplicationId();
@@ -139,22 +127,6 @@ export class ApplicationsService {
       where: { id },
     });
     if (!app) throw new NotFoundException("Application not found");
-
-    // Only admin can delete
-    if (user?.role !== "admin")
-      throw new ForbiddenException("Insufficient permissions");
-    // Clear location mapping before deleting the application
-    const currentLocation = await this.prisma.location.findFirst({
-      where: { applicationId: id },
-    });
-    if (currentLocation) {
-      await this.prisma.location
-        .update({
-          where: { id: currentLocation.id },
-          data: { applicationId: null },
-        })
-        .catch(() => {});
-    }
 
     return this.prisma.application.delete({
       where: { id },

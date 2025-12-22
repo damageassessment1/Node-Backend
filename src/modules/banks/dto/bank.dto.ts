@@ -6,11 +6,12 @@ import {
   IsEnum,
   IsNotEmpty,
   Length,
+  IsInt,
 } from 'class-validator';
 
 
 export class CreateBankAccountDto {
-  @IsString()
+  @IsInt()
   @IsNotEmpty()
   citizenId: number
 
@@ -49,7 +50,7 @@ export class CreateBankAccountDto {
 
 export class UpdateBankAccountDto {
 
-  @IsString()
+  @IsInt()
   @IsNotEmpty()
   citizenId: number
 
