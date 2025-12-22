@@ -18,7 +18,12 @@ import { UserRole } from "@prisma/client";
 import { CitizensService } from "../citizens.service";
 import { CreateCitizenDto } from "../dto/create-citizen.dto";
 import { UpdateCitizenDto } from "../dto/update-citizen.dto";
-@Controller("admin/citizens")
+import {
+  ADMIN_CITIZENS_ROUTE_PREFIX,
+  ADMIN_ROUTES,
+  CITIZEN_ID_PARAM,
+} from "src/common/constats/routes.constants";
+@Controller(ADMIN_CITIZENS_ROUTE_PREFIX)
 export class AdminCitizensController {
   constructor(private svc: CitizensService) {}
 
@@ -28,23 +33,23 @@ export class AdminCitizensController {
     return this.svc.create(dto);
   }
 
-  @Get() 
-  @UseGuards(RolesGuard(UserRole.ADMIN,UserRole.SUPERVISOR))
+  @Get()
+  @UseGuards(RolesGuard(UserRole.ADMIN, UserRole.SUPERVISOR))
   findAll(@User() user, @MaybeSupervisor() sup?: any) {
     const effectiveUser = sup ?? user;
     return this.svc.findAll(effectiveUser);
   }
 
-  @Get("export-citizens")
+  @Get(ADMIN_ROUTES.CITIZENS_EXPORT)
   @UseGuards(RolesGuard(UserRole.ADMIN))
   async exportCitizens(@Res() res: Response) {
     await this.svc.exportCitizens(res);
   }
 
-  @Get(":id")
-  @UseGuards(RolesGuard(UserRole.ADMIN,UserRole.SUPERVISOR))
+  @Get(`:${CITIZEN_ID_PARAM}`)
+  @UseGuards(RolesGuard(UserRole.ADMIN, UserRole.SUPERVISOR))
   findOne(
-    @Param("id", ParseIntPipe) id: number,
+    @Param(CITIZEN_ID_PARAM, ParseIntPipe) id: number,
     @User() user,
     @MaybeSupervisor() sup?: any
   ) {
@@ -52,28 +57,19 @@ export class AdminCitizensController {
     return this.svc.findOne(id, effectiveUser);
   }
 
-  @Patch(":id")
+  @Patch(`:${CITIZEN_ID_PARAM}`)
   @UseGuards(RolesGuard(UserRole.ADMIN))
   update(
-    @Param("id", ParseIntPipe) id: number,
+    @Param(CITIZEN_ID_PARAM, ParseIntPipe) id: number,
     @Body() dto: UpdateCitizenDto,
     @User() user
   ) {
     return this.svc.update(id, dto, user);
   }
 
-  @Delete(":id")
+  @Delete(`:${CITIZEN_ID_PARAM}`)
   @UseGuards(RolesGuard(UserRole.ADMIN))
-  remove(@Param("id", ParseIntPipe) id: number) {
+  remove(@Param(CITIZEN_ID_PARAM, ParseIntPipe) id: number) {
     return this.svc.remove(id);
   }
-
-//   @Post(":id/locations")
-//   @UseGuards(RolesGuard(UserRole.ADMIN))
-//   createLocation(
-//     @Param("id", ParseIntPipe) id: number,
-//     @Body() dto: CreateLocationDto
-//   ) {
-//     return this.svc.createLocation(id, dto);
-//   }
 }

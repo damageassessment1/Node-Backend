@@ -13,6 +13,7 @@ import { JwtService } from "@nestjs/jwt";
 import { PrismaService } from "./modules/database/prisma.service";
 import * as bcrypt from "bcryptjs";
 import { UserRole } from "@prisma/client";
+import { API_PREFIX } from "./common/constats/routes.constants";
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -28,8 +29,6 @@ async function bootstrap() {
     new JsonBodyExceptionFilter(),
     new AllExceptionsFilter()
   );
-
-  
 
   app.useGlobalInterceptors(new ResponseInterceptor());
 
@@ -76,7 +75,7 @@ async function bootstrap() {
 
   // Enable CORS
   app.enableCors();
-  app.setGlobalPrefix('api');
+  app.setGlobalPrefix(API_PREFIX);
 
   await app.listen(process.env.PORT ?? 3000);
 }

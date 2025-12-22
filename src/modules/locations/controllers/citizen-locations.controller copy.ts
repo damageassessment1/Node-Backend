@@ -8,17 +8,23 @@ import {
 import { LocationsService } from "../locations.service";
 import { Citizen as CitizenType, LocationType } from "@prisma/client";
 import { FileFieldsInterceptor } from "@nestjs/platform-express";
-import { AddCurrentLocationDto, AddPreviousLocationDto } from "../dto/add-location.dto";
+import {
+  AddCurrentLocationDto,
+  AddPreviousLocationDto,
+} from "../dto/add-location.dto";
 import { UploadsValidationPipe } from "src/common/validators/upload-validation.pipe";
 import { Citizen } from "src/common/decorators/citizen.decorator";
+import {
+  CITIZEN_LOCATIONS_ROUTE_PREFIX,
+  CITIZEN_ROUTES,
+} from "src/common/constats/routes.constants";
 
-@Controller("citizen/locations")
+@Controller(CITIZEN_LOCATIONS_ROUTE_PREFIX)
 export class CitizenLocationsController {
   constructor(private readonly service: LocationsService) {}
 
-
   // Add previous location to application
-  @Post("/previous")
+  @Post(CITIZEN_ROUTES.LOCATIONS.PREVIOUS)
   @UseInterceptors(
     FileFieldsInterceptor([
       { name: "beforeWarImage", maxCount: 1 },
@@ -51,16 +57,11 @@ export class CitizenLocationsController {
   }
 
   // Add current location to application
-  @Post("/current")
+  @Post(CITIZEN_ROUTES.LOCATIONS.CURRENT)
   async addCurrentLocation(
     @Body() dto: AddCurrentLocationDto,
     @Citizen() user: CitizenType
   ) {
-    return this.service.addCurrentLocation(
-      dto,
-      LocationType.CURRENT,
-      user
-    );
+    return this.service.addCurrentLocation(dto, LocationType.CURRENT, user);
   }
- 
 }

@@ -1,21 +1,15 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Post,
-  UploadedFiles,
-  UseInterceptors,
-} from "@nestjs/common";
-import { Citizen as CitizenType, LocationType } from "@prisma/client";
+import { Controller, Get, Param } from "@nestjs/common";
+import { Citizen as CitizenType } from "@prisma/client";
 import { Citizen } from "src/common/decorators/citizen.decorator";
-import { FileFieldsInterceptor } from "@nestjs/platform-express";
-import { UploadsValidationPipe } from "src/common/validators/upload-validation.pipe";
 import { ApplicationsService } from "../applications.service";
-import { AddCurrentLocationDto, AddPreviousLocationDto } from "../../locations/dto/add-location.dto";
 import { Public } from "src/common/decorators/public-endpoint.decorator";
+import {
+  APPLICATION_ID_PARAM,
+  CITIZEN_APPLICATIONS_ROUTE_PREFIX,
+  CITIZEN_ROUTES,
+} from "src/common/constats/routes.constants";
 
-@Controller("citizen/applications")
+@Controller(CITIZEN_APPLICATIONS_ROUTE_PREFIX)
 export class CitizenApplicationsController {
   constructor(private readonly service: ApplicationsService) {}
 
@@ -24,10 +18,9 @@ export class CitizenApplicationsController {
     return this.service.getMyApplications(user);
   }
 
-  @Get("/track/:id")
+  @Get(`${CITIZEN_ROUTES.APPLICATION_TRACK}:${APPLICATION_ID_PARAM}`)
   @Public()
-  async findApplicationById(@Param("id") id: string) {
+  async findApplicationById(@Param(APPLICATION_ID_PARAM) id: string) {
     return this.service.trackApplicationById(id);
   }
-
 }

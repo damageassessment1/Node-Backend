@@ -17,8 +17,9 @@ import { RolesGuard } from "src/common/guards/roles.guard";
 import { Response } from "express";
 import { UserRole ,User as UserType} from "@prisma/client";
 import { User } from "src/common/decorators/user.decorator";
+import { ADMIN_ROUTES, ADMIN_USERS_ROUTE_PREFIX, USER_ID_PARAM } from "src/common/constats/routes.constants";
 
-@Controller("admin/users")
+@Controller(ADMIN_USERS_ROUTE_PREFIX)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
@@ -34,24 +35,24 @@ export class UsersController {
     return this.usersService.findAllUsers();
   }
 
-  @Get("export-users")
+  @Get(ADMIN_ROUTES.USERS_EXPORT)
   @UseGuards(RolesGuard(UserRole.ADMIN))
   async exportUsers(@Res() res: Response) {
     await this.usersService.exportUsers(res);
   }
 
-  @Patch(":id")
+  @Patch(`:${USER_ID_PARAM}`)
   @UseGuards(RolesGuard(UserRole.ADMIN))
   update(
-    @Param("id", ParseIntPipe) id: number,
+    @Param(USER_ID_PARAM, ParseIntPipe) id: number,
     @Body() updateUserDto: UpdateUserDto
   ) {
     return this.usersService.update(id, updateUserDto);
   }
 
-  @Delete(":id")
+  @Delete(`:${USER_ID_PARAM}`)
   @UseGuards(RolesGuard(UserRole.ADMIN))
-  remove(@Param("id", ParseIntPipe) id: number,@User() user:UserType) {
+  remove(@Param(USER_ID_PARAM, ParseIntPipe) id: number,@User() user:UserType) {
     return this.usersService.remove(id,user);
   }
 

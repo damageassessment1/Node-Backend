@@ -14,8 +14,13 @@ import { User } from "src/common/decorators/user.decorator";
 import { CreateLocationDto } from "../dto/create-location.dto";
 import { UpdateLocationDto } from "../dto/update-location.dto";
 import { UserRole } from "@prisma/client";
+import {
+  ADMIN_LOCATIONS_ROUTE_PREFIX,
+  ADMIN_ROUTES,
+  LOCATION_ID_PARAM,
+} from "src/common/constats/routes.constants";
 
-@Controller("admin/locations")
+@Controller(ADMIN_LOCATIONS_ROUTE_PREFIX)
 export class AdminLocationsController {
   constructor(private readonly svc: LocationsService) {}
 
@@ -26,30 +31,30 @@ export class AdminLocationsController {
   }
 
   @Get()
-  @UseGuards(RolesGuard(UserRole.ADMIN,UserRole.SUPERVISOR))
+  @UseGuards(RolesGuard(UserRole.ADMIN, UserRole.SUPERVISOR))
   findAll(@User() user: any) {
     return this.svc.findAll(user);
   }
 
-  @Get(":id")
-  @UseGuards(RolesGuard(UserRole.ADMIN,UserRole.SUPERVISOR))
-  findOne(@Param("id") id: string, @User() user: any) {
+  @Get(`:${LOCATION_ID_PARAM}`)
+  @UseGuards(RolesGuard(UserRole.ADMIN, UserRole.SUPERVISOR))
+  findOne(@Param(LOCATION_ID_PARAM) id: string, @User() user: any) {
     return this.svc.findOne(Number(id), user);
   }
 
-  @Patch(":id")
+  @Patch(`:${LOCATION_ID_PARAM}`)
   @UseGuards(RolesGuard(UserRole.ADMIN))
   update(
-    @Param("id") id: string,
+    @Param(LOCATION_ID_PARAM) id: string,
     @Body() dto: UpdateLocationDto,
     @User() user: any
   ) {
     return this.svc.update(Number(id), dto, user);
   }
 
-  @Delete(":id")
+  @Delete(`:${LOCATION_ID_PARAM}`)
   @UseGuards(RolesGuard(UserRole.ADMIN))
-  remove(@Param("id") id: string, @User() user: any) {
+  remove(@Param(LOCATION_ID_PARAM) id: string, @User() user: any) {
     return this.svc.remove(Number(id), user);
   }
 }

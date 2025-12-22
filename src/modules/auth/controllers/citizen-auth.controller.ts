@@ -1,27 +1,28 @@
-import { Body, Controller, Get, Post, Req } from "@nestjs/common";
-import { Request } from "express";
+import { Body, Controller, Post } from "@nestjs/common";
 import { AuthService } from "../auth.service";
 import {
   ChangePasswordDto,
   CitizenLoginDto,
   CompleteSignupDto,
-  SigninDto,
   VerifyIdDto,
   VerifyQuestionsDto,
 } from "../dto";
 import { Public } from "src/common/decorators/public-endpoint.decorator";
-import { Citizen as CitizenType, User as UserType } from "@prisma/client";
+import { Citizen as CitizenType } from "@prisma/client";
 import { Citizen } from "src/common/decorators/citizen.decorator";
-import { User } from "src/common/decorators/user.decorator";
+import {
+  CITIZEN_AUTH_ROUTE_PREFIX,
+  AUTH_ROUTES,
+} from "src/common/constats/routes.constants";
 
-@Controller("auth/citizen")
+@Controller(CITIZEN_AUTH_ROUTE_PREFIX)
 export class CitizenAuthController {
   constructor(private authService: AuthService) {}
 
   /**
    * Step 1: Verify National ID
    */
-  @Post("verify-id")
+  @Post(AUTH_ROUTES.CITIZEN.VERIFY_ID)
   @Public()
   async verifyNationalId(@Body() dto: VerifyIdDto) {
     return this.authService.verifyNationalId(dto.nationalId);
@@ -29,7 +30,7 @@ export class CitizenAuthController {
   /**
    * Step 2: Verify Personal Questions
    */
-  @Post("verify-questions")
+  @Post(AUTH_ROUTES.CITIZEN.VERIFY_QUESTIONS)
   @Public()
   async verifyQuestions(@Body() dto: VerifyQuestionsDto) {
     return this.authService.verifySecurityQuestions(
@@ -41,7 +42,7 @@ export class CitizenAuthController {
   /**
    * Step 3: Complete Signup
    */
-  @Post("complete-signup")
+  @Post(AUTH_ROUTES.CITIZEN.COMPLETE_SIGNUP)
   @Public()
   async signup(@Body() dto: CompleteSignupDto) {
     return this.authService.completeCitizenSignup(dto);
@@ -50,17 +51,17 @@ export class CitizenAuthController {
   /**
    * Step 3: Citizen Login
    */
-  @Post("citizen-login")
+  @Post(AUTH_ROUTES.CITIZEN.LOGIN)
   @Public()
   async citizenLogin(@Body() dto: CitizenLoginDto) {
     return this.authService.citizenLogin(dto.nationalId, dto.password);
   }
 
-  @Post("change-password")
-  async changePassword(@Body() dto: ChangePasswordDto,@Citizen() citizen:CitizenType,@User() user:UserType){
-    const id = citizen.id || user.id
-    const userType = citizen ? "citizen" : user ? "user" : null
-    return this.authService.changePassword(dto,id,userType)
+  @Post(AUTH_ROUTES.CITIZEN.CHANGE_PASSWORD)
+  async changePassword(
+    @Body() dto: ChangePasswordDto,
+    @Citizen() citizen: CitizenType
+  ) {
+    return this.authService.changePassword(dto, citizen.id, "citizen");
   }
-
 }

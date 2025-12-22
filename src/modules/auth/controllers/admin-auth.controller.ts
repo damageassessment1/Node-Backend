@@ -1,36 +1,26 @@
-import { Body, Controller, Get, Post, Req } from "@nestjs/common";
-import { Request } from "express";
+import { Body, Controller, Post } from "@nestjs/common";
 import { AuthService } from "../auth.service";
-import {
-  ChangePasswordDto,
-  CitizenLoginDto,
-  CompleteSignupDto,
-  SigninDto,
-  VerifyIdDto,
-  VerifyQuestionsDto,
-} from "../dto";
+import { ChangePasswordDto, SigninDto } from "../dto";
 import { Public } from "src/common/decorators/public-endpoint.decorator";
-import { Citizen as CitizenType, User as UserType } from "@prisma/client";
-import { Citizen } from "src/common/decorators/citizen.decorator";
+import { User as UserType } from "@prisma/client";
 import { User } from "src/common/decorators/user.decorator";
+import {
+  ADMIN_AUTH_ROUTE_PREFIX,
+  AUTH_ROUTES,
+} from "src/common/constats/routes.constants";
 
-@Controller("auth/admin")
+@Controller(ADMIN_AUTH_ROUTE_PREFIX)
 export class AdminAuthController {
   constructor(private authService: AuthService) {}
 
- 
-
-  @Post("signin")
+  @Post(AUTH_ROUTES.ADMIN.SIGNIN)
   @Public()
   async signIn(@Body() dto: SigninDto) {
     return this.authService.adminSignIn(dto);
   }
 
-  @Post("change-password")
-  async changePassword(@Body() dto: ChangePasswordDto,@Citizen() citizen:CitizenType,@User() user:UserType){
-    const id = citizen.id || user.id
-    const userType = citizen ? "citizen" : user ? "user" : null
-    return this.authService.changePassword(dto,id,userType)
+  @Post(AUTH_ROUTES.ADMIN.CHANGE_PASSWORD)
+  async changePassword(@Body() dto: ChangePasswordDto, @User() user: UserType) {
+    return this.authService.changePassword(dto, user.id, "user");
   }
-
 }

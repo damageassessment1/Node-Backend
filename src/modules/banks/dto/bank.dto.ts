@@ -12,6 +12,10 @@ import {
 export class CreateBankAccountDto {
   @IsString()
   @IsNotEmpty()
+  citizenId: number
+
+  @IsString()
+  @IsNotEmpty()
   bankId: string;
 
   @IsString()
@@ -44,6 +48,12 @@ export class CreateBankAccountDto {
 
 
 export class UpdateBankAccountDto {
+
+  @IsString()
+  @IsNotEmpty()
+  citizenId: number
+
+
   @IsString()
   @IsOptional()
   @Length(2, 100)
@@ -75,4 +85,11 @@ export class UpdateBankAccountDto {
   @IsEnum(AccountStatus)
   @IsOptional()
   status?: AccountStatus;
+}
+
+
+export class DeleteAccountDto{
+  @IsString()
+  @IsNotEmpty()
+  citizenId: number
 }

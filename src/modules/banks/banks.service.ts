@@ -63,21 +63,20 @@ export class BanksService {
      ADMIN (CITIZEN SCOPED)
   ========================= */
   async createBankAccountForCitizen(
-    citizenId: number,
     dto: CreateBankAccountDto
   ) {
-    await this.ensureCitizenExists(citizenId);
+    await this.ensureCitizenExists(dto.citizenId);
     await this.ensureBankExists(dto.bankId);
 
-    await this.ensureNoDuplicateBankAccount(citizenId,dto.bankId)
+    await this.ensureNoDuplicateBankAccount(dto.citizenId,dto.bankId)
 
     if (dto.isPrimary) {
-      await this.clearPrimaryAccount(citizenId);
+      await this.clearPrimaryAccount(dto.citizenId);
     }
 
     return this.prisma.citizenBankAccount.create({
       data: {
-        citizenId,
+        citizenId:dto.citizenId,
         bankId: dto.bankId,
         accountHolderName: dto.accountHolderName,
         accountNumber: dto.accountNumber,
@@ -110,14 +109,13 @@ export class BanksService {
   }
 
   async updateBankAccount(
-    citizenId: number,
     accountId: string,
     dto: UpdateBankAccountDto
   ) {
-    const account = await this.findCitizenAccountOrFail(citizenId, accountId);
+    const account = await this.findCitizenAccountOrFail(dto.citizenId, accountId);
 
     if (dto.isPrimary) {
-      await this.clearPrimaryAccount(citizenId);
+      await this.clearPrimaryAccount(dto.citizenId);
     }
 
     return this.prisma.citizenBankAccount.update({

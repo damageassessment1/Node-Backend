@@ -15,8 +15,13 @@ import { UserRole } from "@prisma/client";
 import { Response } from "express";
 import { ApplicationsService } from "../applications.service";
 import { CreateApplicationDto, UpdateApplicationDto } from "../dto";
+import {
+  ADMIN_APPLICATIONS_ROUTE_PREFIX,
+  ADMIN_ROUTES,
+  APPLICATION_ID_PARAM,
+} from "src/common/constats/routes.constants";
 
-@Controller("admin/applications")
+@Controller(ADMIN_APPLICATIONS_ROUTE_PREFIX)
 export class AdminApplicationsController {
   constructor(private readonly service: ApplicationsService) {}
 
@@ -32,35 +37,31 @@ export class AdminApplicationsController {
     return this.service.findAll(user);
   }
 
-
-  @Get("export-applications")
+  @Get(ADMIN_ROUTES.APPLICATIONS_EXPORT)
   @UseGuards(RolesGuard(UserRole.ADMIN))
   async exportApplications(@Res() res: Response) {
     await this.service.exportApplications(res);
   }
 
-  @Get(":id")
+  @Get(`:${APPLICATION_ID_PARAM}`)
   @UseGuards(RolesGuard(UserRole.ADMIN, UserRole.SUPERVISOR))
-  async findOne(@Param("id") id: string, @User() user: any) {
+  async findOne(@Param(APPLICATION_ID_PARAM) id: string, @User() user: any) {
     return this.service.findOne(id, user);
   }
 
- 
-  @Patch(":id")
+  @Patch(`:${APPLICATION_ID_PARAM}`)
   @UseGuards(RolesGuard(UserRole.ADMIN, UserRole.SUPERVISOR))
   async update(
-    @Param("id") id: string,
+    @Param(APPLICATION_ID_PARAM) id: string,
     @Body() dto: UpdateApplicationDto,
     @User() user: any
   ) {
     return this.service.update(id, dto, user);
   }
 
-  @Delete(":id")
+  @Delete(`:${APPLICATION_ID_PARAM}`)
   @UseGuards(RolesGuard(UserRole.ADMIN))
-  async remove(@Param("id") id: string, @User() user: any) {
+  async remove(@Param(APPLICATION_ID_PARAM) id: string, @User() user: any) {
     return this.service.remove(id, user);
   }
-
-  
 }

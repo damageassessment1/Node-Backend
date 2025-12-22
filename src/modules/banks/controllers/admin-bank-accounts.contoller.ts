@@ -12,88 +12,63 @@ import {
 } from "@nestjs/common";
 import { BanksService } from "../banks.service";
 import { RolesGuard } from "src/common/guards/roles.guard";
+import { UserRole } from "@prisma/client";
 import {
-  Citizen as CitizenType,
-  User as UserType,
-  UserRole,
-} from "@prisma/client";
-import { CreateBankAccountDto, UpdateBankAccountDto } from "../dto/bank.dto";
-import { Citizen } from "src/common/decorators/citizen.decorator";
-import { User } from "src/common/decorators/user.decorator";
+  CreateBankAccountDto,
+  DeleteAccountDto,
+  UpdateBankAccountDto,
+} from "../dto/bank.dto";
 import { Response } from "express";
+import {
+  ACCOUNT_ID_PARAM,
+  ADMIN_BANK_ACCOUNTS_ROUTE_PREFIX,
+  ADMIN_ROUTES,
+} from "src/common/constats/routes.constants";
 
-@Controller('bank-accounts')
+@Controller(ADMIN_BANK_ACCOUNTS_ROUTE_PREFIX)
 export class AdminBankAccountsController {
   constructor(private service: BanksService) {}
 
-
   @Get()
   @UseGuards(RolesGuard(UserRole.ADMIN))
-  getAllBankAcountsForCitizens(){
+  getAllBankAcountsForCitizens() {
     return this.service.getAllBankAcountsForCitizens();
+  }
 
+  @Post()
+  @UseGuards(RolesGuard(UserRole.ADMIN))
+  createForCitizen(@Body() dto: CreateBankAccountDto) {
+    return this.service.createBankAccountForCitizen(dto);
   }
 
   // =====================
   // Admin exports
   // =====================
-  @Get('export')
+  @Get(ADMIN_ROUTES.BANK_ACCOUNTS_EXPORT)
   @UseGuards(RolesGuard(UserRole.ADMIN))
   exportBankAccounts(@Res() res: Response) {
     return this.service.exportBankAccounts(res);
   }
 
   // =====================
-  // Citizen (self)
-  // =====================
-  @Post('my-accounts')
-  createMyBankAccount(
-    @Body() dto: CreateBankAccountDto,
-    @Citizen() citizen: CitizenType
-  ) {
-    return this.service.createMyBankAccount(dto, citizen);
-  }
-
-
-  @Get('my-accounts')
-  getCitizenAccounts(
-    @Citizen() citizen:CitizenType
-  ) {
-    return this.service.getMyBankAccounts(citizen);
-  }
-
-
-  // =====================
   // Admin (citizen scoped)
   // =====================
-  @Post('citizens/:citizenId')
-  @UseGuards(RolesGuard(UserRole.ADMIN))
-  createForCitizen(
-    @Param('citizenId', ParseIntPipe) citizenId: number,
-    @Body() dto: CreateBankAccountDto
-  ) {
-    return this.service.createBankAccountForCitizen(citizenId, dto);
-  }
 
-
-
-  @Patch(':accountId/citizens/:citizenId')
+  @Patch(`:${ACCOUNT_ID_PARAM}`)
   @UseGuards(RolesGuard(UserRole.ADMIN))
   updateAccount(
-    @Param('citizenId', ParseIntPipe) citizenId: number,
-    @Param('accountId') accountId: string,
+    @Param(ACCOUNT_ID_PARAM) accountId: string,
     @Body() dto: UpdateBankAccountDto
   ) {
-    return this.service.updateBankAccount(citizenId, accountId, dto);
+    return this.service.updateBankAccount(accountId, dto);
   }
 
-  @Delete(':accountId/citizens/:citizenId')
+  @Delete(`:${ACCOUNT_ID_PARAM}`)
   @UseGuards(RolesGuard(UserRole.ADMIN))
   deleteAccount(
-    @Param('citizenId', ParseIntPipe) citizenId: number,
-    @Param('accountId') accountId: string
+    @Body() dto: DeleteAccountDto,
+    @Param(ACCOUNT_ID_PARAM) accountId: string
   ) {
-    return this.service.deleteBankAccount(citizenId, accountId);
+    return this.service.deleteBankAccount(dto.citizenId, accountId);
   }
 }
-
