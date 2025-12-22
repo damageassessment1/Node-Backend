@@ -86,10 +86,3 @@ export class UpdateBankAccountDto {
   @IsOptional()
   status?: AccountStatus;
 }
-
-
-export class DeleteAccountDto{
-  @IsString()
-  @IsNotEmpty()
-  citizenId: number
-}

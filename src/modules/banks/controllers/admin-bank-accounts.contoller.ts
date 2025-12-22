@@ -15,7 +15,6 @@ import { RolesGuard } from "src/common/guards/roles.guard";
 import { UserRole } from "@prisma/client";
 import {
   CreateBankAccountDto,
-  DeleteAccountDto,
   UpdateBankAccountDto,
 } from "../dto/bank.dto";
 import { Response } from "express";
@@ -66,9 +65,8 @@ export class AdminBankAccountsController {
   @Delete(`:${ACCOUNT_ID_PARAM}`)
   @UseGuards(RolesGuard(UserRole.ADMIN))
   deleteAccount(
-    @Body() dto: DeleteAccountDto,
     @Param(ACCOUNT_ID_PARAM) accountId: string
   ) {
-    return this.service.deleteBankAccount(dto.citizenId, accountId);
+    return this.service.deleteBankAccount(accountId);
   }
 }

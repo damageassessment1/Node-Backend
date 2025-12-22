@@ -136,9 +136,7 @@ export class BanksService {
     });
   }
 
-  async deleteBankAccount(citizenId: number, accountId: string) {
-    await this.findCitizenAccountOrFail(citizenId, accountId);
-
+  async deleteBankAccount( accountId: string) {
     return this.prisma.citizenBankAccount.delete({
       where: { id: accountId },
     });
