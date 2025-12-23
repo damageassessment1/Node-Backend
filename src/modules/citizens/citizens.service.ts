@@ -117,10 +117,7 @@ export class CitizensService {
     });
   }
 
-
-
   async updateProfileData(citizen: Citizen, dto: UpdateProfileDto) {
-
     if (
       dto.first_name ||
       dto.father_name ||
@@ -130,11 +127,12 @@ export class CitizensService {
       dto["full_name"] =
         `${dto.first_name || citizen.first_name} ${dto.father_name || citizen.father_name} ${dto.grandfather_name || citizen.grandfather_name} ${dto.family_name || citizen.family_name}`.trim();
     }
-    
+
     return this.prisma.citizen.update({
       where: { id: citizen.id },
       data: {
         ...dto,
+        date_of_birth: dto.date_of_birth ? new Date(dto.date_of_birth) : null,
       },
     });
   }

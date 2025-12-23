@@ -1,36 +1,36 @@
-import { Injectable } from "@nestjs/common";
-import Mailgun from "mailgun.js";
-import * as FormData from "form-data";
+// import { Injectable } from "@nestjs/common";
+// import Mailgun from "mailgun.js";
+// import * as FormData from "form-data";
 
-@Injectable()
-export class MailService {
-  private mg;
+// @Injectable()
+// export class MailService {
+//   private mg;
 
-  constructor() {
-    const mailgun = new Mailgun(FormData);
-    this.mg = mailgun.client({
-      username: "api",
-      key: process.env.MAILGUN_API_KEY!,
-    });
-  }
+//   constructor() {
+//     const mailgun = new Mailgun(FormData);
+//     this.mg = mailgun.client({
+//       username: "api",
+//       key: process.env.MAILGUN_API_KEY!,
+//     });
+//   }
 
-  async sendResetPasswordEmail(
-    to: string,
-    name: string,
-    resetLink: string
-  ) {
-    return this.mg.messages.create(process.env.MAILGUN_DOMAIN!, {
-      from: `Support <${process.env.MAIL_FROM}>`,
-      to,
-      subject: "إعادة تعيين كلمة المرور",
-      html: `
-        <p>مرحباً ${name}</p>
-        <p>اضغط على الرابط لإعادة تعيين كلمة المرور:</p>
-        <a href="${resetLink}">إعادة تعيين كلمة المرور</a>
-      `,
-    });
-  }
-}
+//   async sendResetPasswordEmail(
+//     to: string,
+//     name: string,
+//     resetLink: string
+//   ) {
+//     return this.mg.messages.create(process.env.MAILGUN_DOMAIN!, {
+//       from: `Support <${process.env.MAIL_FROM}>`,
+//       to,
+//       subject: "إعادة تعيين كلمة المرور",
+//       html: `
+//         <p>مرحباً ${name}</p>
+//         <p>اضغط على الرابط لإعادة تعيين كلمة المرور:</p>
+//         <a href="${resetLink}">إعادة تعيين كلمة المرور</a>
+//       `,
+//     });
+//   }
+// }
 
 // import { Injectable } from "@nestjs/common";
 // import * as nodemailer from "nodemailer";

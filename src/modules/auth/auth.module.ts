@@ -4,8 +4,8 @@ import { JwtModule } from "@nestjs/jwt";
 import { DatabaseModule } from "../database/database.module";
 import { CitizenAuthController } from "./controllers/citizen-auth.controller";
 import { AdminAuthController } from "./controllers/admin-auth.controller";
-import { MailService } from "src/common/services/mail.service";
-import { PasswordResetService } from "./services/password-reset.service";
+// import { MailService } from "src/common/services/mail.service";
+// import { PasswordResetService } from "./services/password-reset.service";
 
 @Module({
   imports: [
@@ -15,7 +15,7 @@ import { PasswordResetService } from "./services/password-reset.service";
     }),
     DatabaseModule,
   ],
-  providers: [AuthService,PasswordResetService,MailService],
+  providers: [AuthService],//PasswordResetService,MailService
   controllers: [AdminAuthController,CitizenAuthController],
   exports: [JwtModule], // Export JwtModule so other modules can use it
 })
