@@ -28,7 +28,7 @@ export class AdminAuthController {
   }
 
   // @Post("reset-password/request")
-  // @UseGuards(RolesGuard(UserRole.ADMIN, UserRole.SUPERVISOR))
+  // @Public()
   // async resetPasswordRequest(
   //   @Body() dto: ResetPasswordRequestDto
   // ) {
@@ -37,7 +37,7 @@ export class AdminAuthController {
 
   // // Step 2: Reset password
   // @Post("reset-password")
-  // @UseGuards(RolesGuard(UserRole.ADMIN, UserRole.SUPERVISOR))
+  // @Public()
   // async resetPassword(
   //   @Body() dto: ResetPasswordDto
   // ) {

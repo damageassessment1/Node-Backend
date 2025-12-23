@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from "@nestjs/common";
+import { Body, Controller, Post, Put } from "@nestjs/common";
 import { AuthService } from "../services/auth.service";
 import {
   ChangePasswordDto,
@@ -69,13 +69,16 @@ export class CitizenAuthController {
     return this.authService.citizenChangePassword(dto, citizen);
   }
 
+
   // @Post("reset-password/request")
+  // @Public()
   // async resetPasswordRequest(@Body() dto: ResetPasswordRequestDto) {
   //   return this.authService.citizenResetPasswordRequest(dto.email);
   // }
 
   // // Step 2: Reset password
   // @Post("reset-password")
+  // @Public()
   // async resetPassword(@Body() dto: ResetPasswordDto) {
   //   return this.authService.citizenResetPassword(dto.token, dto.newPassword);
   // }

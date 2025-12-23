@@ -33,13 +33,15 @@ export class PasswordResetService {
 
     const link = `${process.env.FRONTEND_URL}${frontendPath}?token=${token}`;
 
-    await this.mailService.sendResetPasswordEmail(
+    this.mailService.sendResetPasswordEmail(
       entity.email,
       entity.name || entity.first_name || "User",
       link
     );
 
-    return { success: true };
+    return {
+      message: "إذا كان البريد الإلكتروني موجود سيتم إرسال الرابط",
+    };
   }
 
   async resetPassword(

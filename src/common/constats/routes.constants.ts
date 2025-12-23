@@ -42,6 +42,9 @@ export const ROUTES = {
     APPLICATION: {
       TRACK: "track",
     },
+    PROFILE:{
+      UPDATE:"update-profile"
+    },
 
     LOCATIONS: {
       CURRENT: "current",

@@ -13,6 +13,8 @@ import { v4 as uuidv4 } from "uuid";
 import * as ExcelJS from "exceljs";
 import { Response } from "express";
 import { baseCitizenSelect } from "src/common/prisma/selects/citizen.select";
+import { Citizen } from "@prisma/client";
+import { UpdateProfileDto } from "./dto/update-profile.dto";
 @Injectable()
 export class CitizensService {
   constructor(private prisma: PrismaService) {}
@@ -112,6 +114,28 @@ export class CitizensService {
       where: { id },
       data: dto,
       select: baseCitizenSelect,
+    });
+  }
+
+
+
+  async updateProfileData(citizen: Citizen, dto: UpdateProfileDto) {
+
+    if (
+      dto.first_name ||
+      dto.father_name ||
+      dto.grandfather_name ||
+      dto.family_name
+    ) {
+      dto["full_name"] =
+        `${dto.first_name || citizen.first_name} ${dto.father_name || citizen.father_name} ${dto.grandfather_name || citizen.grandfather_name} ${dto.family_name || citizen.family_name}`.trim();
+    }
+    
+    return this.prisma.citizen.update({
+      where: { id: citizen.id },
+      data: {
+        ...dto,
+      },
     });
   }
 
