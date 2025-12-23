@@ -8,10 +8,11 @@ import {
 } from "@nestjs/common";
 import * as bcrypt from "bcryptjs";
 import { JwtService } from "@nestjs/jwt";
-import { ChangePasswordDto, CompleteSignupDto, SigninDto } from "./dto";
+import { ChangePasswordDto, CompleteSignupDto, SigninDto } from "../dto";
 import { baseUserSelect } from "src/common/prisma/selects";
-import { PrismaService } from "../database/prisma.service";
+import { PrismaService } from "../../database/prisma.service";
 import { Citizen, User, VerificationStatus } from "@prisma/client";
+import { PasswordResetService } from "./password-reset.service";
 
 export interface VerificationQuestion {
   key: string;
@@ -24,6 +25,7 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
+    private passwordResetService: PasswordResetService
   ) {}
 
   async verifyNationalId(nationalId: string) {
@@ -234,92 +236,53 @@ export class AuthService {
     return { access_token: token, user: safeUser };
   }
 
-  // async resetPasswordRequest(email: string) {
-  //   const user = await this.prisma.user.findUnique({
-  //     where: { email },
-  //     select: { id: true, email: true, name: true },
-  //   });
 
-  //   if (!user) {
-  //     throw new UnauthorizedException("البريد الإلكتروني غير موجود");
-  //   }
+  async adminResetPasswordRequest(email: string) {
+    const user = await this.prisma.user.findUnique({ where: { email } });
 
-  //   const resetToken = this.jwtService.sign(
-  //     { sub: user.id, type: "password-reset" },
-  //     { expiresIn: "1h" }
-  //   );
+    return this.passwordResetService.requestReset(
+      user,
+      (id, data) => this.prisma.user.update({ where: { id }, data }),
+      "/admin/reset-password"
+    );
+  }
 
-  //   const hashedToken = await bcrypt.hash(resetToken, 10);
+  async adminResetPassword(token: string, password: string) {
+    return this.passwordResetService.resetPassword(
+      token,
+      () =>
+        this.prisma.user.findMany({
+          where: { resetTokenExpiry: { gt: new Date() } },
+        }),
+      (id, data) =>
+        this.prisma.user.update({ where: { id }, data: { ...data, password } })
+    );
+  }
 
-  //   await this.prisma.user.update({
-  //     where: { id: user.id },
-  //     data: {
-  //       resetToken: hashedToken,
-  //       resetTokenExpiry: new Date(Date.now() + 3600000),
-  //     },
-  //   });
+  async citizenResetPasswordRequest(email: string) {
+    const citizen = await this.prisma.citizen.findFirst({ where: { email } });
 
-  //   const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+    return this.passwordResetService.requestReset(
+      citizen,
+      (id, data) => this.prisma.citizen.update({ where: { id }, data }),
+      "/citizen/reset-password"
+    );
+  }
 
-  //   await this.mailService.sendResetPasswordEmail(
-  //     user.email,
-  //     user.name,
-  //     resetLink
-  //   );
-
-  //   return {
-  //     success: true,
-  //     message: "تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني",
-  //   };
-  // }
-
-  // async resetPassword(resetToken: string, newPassword: string) {
-  //   // Verify token
-  //   try {
-  //     this.jwtService.verify(resetToken);
-  //   } catch {
-  //     throw new UnauthorizedException(
-  //       "رابط إعادة التعيين غير صالح أو منتهي الصلاحية"
-  //     );
-  //   }
-
-  //   // Find user with valid reset token
-  //   const users = await this.prisma.user.findMany({
-  //     where: {
-  //       resetTokenExpiry: { gt: new Date() },
-  //     },
-  //     select: { id: true, resetToken: true },
-  //   });
-
-  //   let validUser: any = null;
-  //   for (const user of users) {
-  //     const isValid = await bcrypt.compare(resetToken, user.resetToken || "");
-  //     if (isValid) {
-  //       validUser = user;
-  //       break;
-  //     }
-  //   }
-
-  //   if (!validUser) {
-  //     throw new UnauthorizedException("رابط إعادة التعيين غير صالح");
-  //   }
-
-  //   // Hash new password and update
-  //   const hashedPassword = await bcrypt.hash(newPassword, 10);
-  //   await this.prisma.user.update({
-  //     where: { id: validUser.id },
-  //     data: {
-  //       password: hashedPassword,
-  //       resetToken: null,
-  //       resetTokenExpiry: null,
-  //     },
-  //   });
-
-  //   return {
-  //     success: true,
-  //     message: "تم تحديث كلمة المرور بنجاح",
-  //   };
-  // }
+  async citizenResetPassword(token: string, password: string) {
+    return this.passwordResetService.resetPassword(
+      token,
+      () =>
+        this.prisma.citizen.findMany({
+          where: { resetTokenExpiry: { gt: new Date() } },
+        }),
+      (id, data) =>
+        this.prisma.citizen.update({
+          where: { id },
+          data: { ...data, password },
+        })
+    );
+  }
 
   async adminChangePassword(dto: ChangePasswordDto, user: User) {
     const existingUser = await this.prisma.user.findUnique({

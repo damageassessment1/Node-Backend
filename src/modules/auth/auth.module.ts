@@ -1,10 +1,11 @@
 import { Module } from "@nestjs/common";
-import { AuthService } from "./auth.service";
+import { AuthService } from "./services/auth.service";
 import { JwtModule } from "@nestjs/jwt";
 import { DatabaseModule } from "../database/database.module";
 import { CitizenAuthController } from "./controllers/citizen-auth.controller";
 import { AdminAuthController } from "./controllers/admin-auth.controller";
 import { MailService } from "src/common/services/mail.service";
+import { PasswordResetService } from "./services/password-reset.service";
 
 @Module({
   imports: [
@@ -14,7 +15,7 @@ import { MailService } from "src/common/services/mail.service";
     }),
     DatabaseModule,
   ],
-  providers: [AuthService,MailService],
+  providers: [AuthService,PasswordResetService,MailService],
   controllers: [AdminAuthController,CitizenAuthController],
   exports: [JwtModule], // Export JwtModule so other modules can use it
 })

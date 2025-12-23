@@ -1,5 +1,5 @@
 import { Body, Controller, Post } from "@nestjs/common";
-import { AuthService } from "../auth.service";
+import { AuthService } from "../services/auth.service";
 import {
   ChangePasswordDto,
   CitizenLoginDto,
@@ -14,7 +14,10 @@ import {
   CITIZEN_AUTH_ROUTE_PREFIX,
   ROUTES,
 } from "src/common/constats/routes.constants";
-import { ResetPasswordDto, ResetPasswordRequestDto } from "../dto/change-password.dto";
+import {
+  ResetPasswordDto,
+  ResetPasswordRequestDto,
+} from "../dto/change-password.dto";
 
 @Controller(CITIZEN_AUTH_ROUTE_PREFIX)
 export class CitizenAuthController {
@@ -66,18 +69,14 @@ export class CitizenAuthController {
     return this.authService.citizenChangePassword(dto, citizen);
   }
 
-  // @Post("reset-password/request")
-  // async resetPasswordRequest(
-  //   @Body() dto: ResetPasswordRequestDto
-  // ) {
-  //   return this.authService.resetPasswordRequest(dto.email);
-  // }
+  @Post("reset-password/request")
+  async resetPasswordRequest(@Body() dto: ResetPasswordRequestDto) {
+    return this.authService.citizenResetPasswordRequest(dto.email);
+  }
 
-  // // Step 2: Reset password
-  // @Post("reset-password")
-  // async resetPassword(
-  //   @Body() dto: ResetPasswordDto
-  // ) {
-  //   return this.authService.resetPassword(dto.token, dto.newPassword);
-  // }
+  // Step 2: Reset password
+  @Post("reset-password")
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.citizenResetPassword(dto.token, dto.newPassword);
+  }
 }

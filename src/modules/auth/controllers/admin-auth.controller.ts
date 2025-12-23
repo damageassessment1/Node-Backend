@@ -1,5 +1,5 @@
 import { Body, Controller, Post, UseGuards } from "@nestjs/common";
-import { AuthService } from "../auth.service";
+import { AuthService } from "../services/auth.service";
 import { ChangePasswordDto, SigninDto } from "../dto";
 import { Public } from "src/common/decorators/public-endpoint.decorator";
 import { UserRole, User as UserType } from "@prisma/client";
@@ -27,20 +27,20 @@ export class AdminAuthController {
     return this.authService.adminChangePassword(dto, user);
   }
 
-  // @Post("reset-password/request")
-  // @UseGuards(RolesGuard(UserRole.ADMIN, UserRole.SUPERVISOR))
-  // async resetPasswordRequest(
-  //   @Body() dto: ResetPasswordRequestDto
-  // ) {
-  //   return this.authService.resetPasswordRequest(dto.email);
-  // }
+  @Post("reset-password/request")
+  @UseGuards(RolesGuard(UserRole.ADMIN, UserRole.SUPERVISOR))
+  async resetPasswordRequest(
+    @Body() dto: ResetPasswordRequestDto
+  ) {
+    return this.authService.adminResetPasswordRequest(dto.email);
+  }
 
-  // // Step 2: Reset password
-  // @Post("reset-password")
-  // @UseGuards(RolesGuard(UserRole.ADMIN, UserRole.SUPERVISOR))
-  // async resetPassword(
-  //   @Body() dto: ResetPasswordDto
-  // ) {
-  //   return this.authService.resetPassword(dto.token, dto.newPassword);
-  // }
+  // Step 2: Reset password
+  @Post("reset-password")
+  @UseGuards(RolesGuard(UserRole.ADMIN, UserRole.SUPERVISOR))
+  async resetPassword(
+    @Body() dto: ResetPasswordDto
+  ) {
+    return this.authService.adminResetPassword(dto.token, dto.newPassword);
+  }
 }

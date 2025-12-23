@@ -15,12 +15,11 @@ import * as ExcelJS from "exceljs";
 import { Response } from "express";
 import { baseApplicationSelect } from "src/common/prisma/selects/application.select";
 import { serializeMyApplicationsRes } from "src/common/serializers/application.serializer";
+import { CitizenUpdateApplicationDto } from "./dto/citizen-update-application.dto";
 
 @Injectable()
 export class ApplicationsService {
-  constructor(
-    private prisma: PrismaService,
-  ) {}
+  constructor(private prisma: PrismaService) {}
 
   async create(dto: CreateApplicationDto, user: any) {
     // Only admin can create
@@ -43,8 +42,6 @@ export class ApplicationsService {
         createdById: user?.id ?? null,
       },
     });
-
-   
 
     // Return application with all details
     const result = await this.prisma.application.findUnique({
@@ -134,8 +131,6 @@ export class ApplicationsService {
     });
   }
 
- 
-
   async getMyApplications(citizen: Citizen) {
     const applications = await this.prisma.application.findMany({
       where: { citizenId: citizen.id },
@@ -149,7 +144,6 @@ export class ApplicationsService {
 
     return serializeMyApplicationsRes(applications, citizenWithLocation);
   }
-
 
   async trackApplicationById(id: string) {
     const application = await this.prisma.application.findUnique({
@@ -202,4 +196,51 @@ export class ApplicationsService {
     res.end();
   }
 
+  async updateApplication(id: string, dto: CitizenUpdateApplicationDto) {
+    const application = await this.prisma.application.findUnique({
+      where: { id },
+      include: { locations: true },
+    });
+
+    if (!application) {
+      throw new NotFoundException("الطلب غير موجود");
+    }
+
+    const location = application.locations[0];
+
+    if (!location) {
+      throw new NotFoundException("الموقع غير موجود");
+    }
+
+   
+    const locationData: any = {};
+
+    if (dto.latitude) locationData.latitude = dto.latitude;
+    if (dto.longitude) locationData.longitude = dto.longitude;
+    if (dto.address) locationData.address = dto.address;
+    if (dto.neighborhood) locationData.neighborhood = dto.neighborhood;
+
+    if (Object.keys(locationData).length > 0) {
+      await this.prisma.location.update({
+        where: { id: location.id },
+        data: locationData,
+      });
+    }
+
+   
+    const applicationData: any = {};
+
+    if (dto.extraData) {
+      applicationData.extraData = JSON.parse(dto.extraData);
+    }
+
+    if (Object.keys(applicationData).length === 0) {
+      return application; // nothing to update
+    }
+
+    return await this.prisma.application.update({
+      where: { id },
+      data: applicationData,
+    });
+  }
 }

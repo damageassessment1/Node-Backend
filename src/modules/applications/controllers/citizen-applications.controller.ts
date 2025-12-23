@@ -1,4 +1,4 @@
-import { Controller, Get, Param } from "@nestjs/common";
+import { Body, Controller, Get, Param, Patch, Put } from "@nestjs/common";
 import { Citizen as CitizenType } from "@prisma/client";
 import { Citizen } from "src/common/decorators/citizen.decorator";
 import { ApplicationsService } from "../applications.service";
@@ -8,6 +8,7 @@ import {
   CITIZEN_APPLICATIONS_ROUTE_PREFIX,
   ROUTES,
 } from "src/common/constats/routes.constants";
+import { CitizenUpdateApplicationDto } from "../dto/citizen-update-application.dto";
 
 @Controller(CITIZEN_APPLICATIONS_ROUTE_PREFIX)
 export class CitizenApplicationsController {
@@ -22,5 +23,10 @@ export class CitizenApplicationsController {
   @Public()
   async findApplicationById(@Param(APPLICATION_ID_PARAM) id: string) {
     return this.service.trackApplicationById(id);
+  }
+
+  @Put(`:${APPLICATION_ID_PARAM}`)
+  async updateApplication(@Param(APPLICATION_ID_PARAM) id: string,@Body() dto:CitizenUpdateApplicationDto) {
+    return this.service.updateApplication(id,dto);
   }
 }

@@ -12,6 +12,7 @@ export class ChangePasswordDto {
 
 
 export class ResetPasswordRequestDto {
+  @IsNotEmpty()
   @IsEmail()
   email: string;
 }
