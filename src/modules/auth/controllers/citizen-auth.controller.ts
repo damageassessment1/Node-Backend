@@ -69,14 +69,14 @@ export class CitizenAuthController {
     return this.authService.citizenChangePassword(dto, citizen);
   }
 
-  @Post("reset-password/request")
-  async resetPasswordRequest(@Body() dto: ResetPasswordRequestDto) {
-    return this.authService.citizenResetPasswordRequest(dto.email);
-  }
+  // @Post("reset-password/request")
+  // async resetPasswordRequest(@Body() dto: ResetPasswordRequestDto) {
+  //   return this.authService.citizenResetPasswordRequest(dto.email);
+  // }
 
-  // Step 2: Reset password
-  @Post("reset-password")
-  async resetPassword(@Body() dto: ResetPasswordDto) {
-    return this.authService.citizenResetPassword(dto.token, dto.newPassword);
-  }
+  // // Step 2: Reset password
+  // @Post("reset-password")
+  // async resetPassword(@Body() dto: ResetPasswordDto) {
+  //   return this.authService.citizenResetPassword(dto.token, dto.newPassword);
+  // }
 }

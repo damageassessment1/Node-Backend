@@ -196,7 +196,7 @@ export class ApplicationsService {
     res.end();
   }
 
-  async updateApplication(id: string, dto: CitizenUpdateApplicationDto) {
+  async updateApplication(id: string, dto: CitizenUpdateApplicationDto,citizen:Citizen) {
     const application = await this.prisma.application.findUnique({
       where: { id },
       include: { locations: true },
@@ -204,6 +204,10 @@ export class ApplicationsService {
 
     if (!application) {
       throw new NotFoundException("الطلب غير موجود");
+    }
+
+    if(citizen.id !== application.citizenId){
+      throw new ForbiddenException("غير مسموح");
     }
 
     const location = application.locations[0];

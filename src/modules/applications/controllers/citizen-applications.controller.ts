@@ -26,7 +26,7 @@ export class CitizenApplicationsController {
   }
 
   @Put(`:${APPLICATION_ID_PARAM}`)
-  async updateApplication(@Param(APPLICATION_ID_PARAM) id: string,@Body() dto:CitizenUpdateApplicationDto) {
-    return this.service.updateApplication(id,dto);
+  async updateApplication(@Param(APPLICATION_ID_PARAM) id: string,@Body() dto:CitizenUpdateApplicationDto,@Citizen() citizen: CitizenType) {
+    return this.service.updateApplication(id,dto,citizen);
   }
 }

@@ -27,20 +27,20 @@ export class AdminAuthController {
     return this.authService.adminChangePassword(dto, user);
   }
 
-  @Post("reset-password/request")
-  @UseGuards(RolesGuard(UserRole.ADMIN, UserRole.SUPERVISOR))
-  async resetPasswordRequest(
-    @Body() dto: ResetPasswordRequestDto
-  ) {
-    return this.authService.adminResetPasswordRequest(dto.email);
-  }
+  // @Post("reset-password/request")
+  // @UseGuards(RolesGuard(UserRole.ADMIN, UserRole.SUPERVISOR))
+  // async resetPasswordRequest(
+  //   @Body() dto: ResetPasswordRequestDto
+  // ) {
+  //   return this.authService.adminResetPasswordRequest(dto.email);
+  // }
 
-  // Step 2: Reset password
-  @Post("reset-password")
-  @UseGuards(RolesGuard(UserRole.ADMIN, UserRole.SUPERVISOR))
-  async resetPassword(
-    @Body() dto: ResetPasswordDto
-  ) {
-    return this.authService.adminResetPassword(dto.token, dto.newPassword);
-  }
+  // // Step 2: Reset password
+  // @Post("reset-password")
+  // @UseGuards(RolesGuard(UserRole.ADMIN, UserRole.SUPERVISOR))
+  // async resetPassword(
+  //   @Body() dto: ResetPasswordDto
+  // ) {
+  //   return this.authService.adminResetPassword(dto.token, dto.newPassword);
+  // }
 }
