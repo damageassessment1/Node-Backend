@@ -19,7 +19,7 @@ export class CitizenApplicationsController {
     return this.service.getMyApplications(user);
   }
 
-  @Get(`${ROUTES.CITIZEN.APPLICATION.TRACK}:${APPLICATION_ID_PARAM}`)
+  @Get(`${ROUTES.CITIZEN.APPLICATION.TRACK}/:${APPLICATION_ID_PARAM}`)
   @Public()
   async findApplicationById(@Param(APPLICATION_ID_PARAM) id: string) {
     return this.service.trackApplicationById(id);
