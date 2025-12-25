@@ -4,38 +4,37 @@ import {
   Delete,
   Get,
   Param,
-  ParseIntPipe,
   Patch,
   Post,
   Res,
   UseGuards,
 } from "@nestjs/common";
 import { BanksService } from "../banks.service";
-import { RolesGuard } from "src/common/guards/roles.guard";
-import { UserRole } from "@prisma/client";
-import {
-  CreateBankAccountDto,
-  UpdateBankAccountDto,
-} from "../dto/bank.dto";
+import { CreateBankAccountDto, UpdateBankAccountDto } from "../dto/bank.dto";
 import { Response } from "express";
 import {
   ACCOUNT_ID_PARAM,
   ADMIN_BANK_ACCOUNTS_ROUTE_PREFIX,
   ROUTES,
 } from "src/common/constats/routes.constants";
+import { PermissionsGuard } from "src/common/guards/permissions.guard";
+import { RequirePermissions } from "src/common/decorators/requir-permission.decorator";
+import { permissions } from "src/common/constats/permissions.constants";
 
 @Controller(ADMIN_BANK_ACCOUNTS_ROUTE_PREFIX)
 export class AdminBankAccountsController {
   constructor(private service: BanksService) {}
 
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions(permissions.bank_account.view)
   @Get()
-  @UseGuards(RolesGuard(UserRole.ADMIN))
   getAllBankAcountsForCitizens() {
     return this.service.getAllBankAcountsForCitizens();
   }
 
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions(permissions.bank_account.create)
   @Post()
-  @UseGuards(RolesGuard(UserRole.ADMIN))
   createForCitizen(@Body() dto: CreateBankAccountDto) {
     return this.service.createBankAccountForCitizen(dto);
   }
@@ -43,8 +42,9 @@ export class AdminBankAccountsController {
   // =====================
   // Admin exports
   // =====================
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions(permissions.bank_account.export)
   @Get(ROUTES.ADMIN.ACTIONS.EXPORT)
-  @UseGuards(RolesGuard(UserRole.ADMIN))
   exportBankAccounts(@Res() res: Response) {
     return this.service.exportBankAccounts(res);
   }
@@ -52,9 +52,9 @@ export class AdminBankAccountsController {
   // =====================
   // Admin (citizen scoped)
   // =====================
-
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions(permissions.bank_account.update)
   @Patch(`:${ACCOUNT_ID_PARAM}`)
-  @UseGuards(RolesGuard(UserRole.ADMIN))
   updateAccount(
     @Param(ACCOUNT_ID_PARAM) accountId: string,
     @Body() dto: UpdateBankAccountDto
@@ -62,11 +62,10 @@ export class AdminBankAccountsController {
     return this.service.updateBankAccount(accountId, dto);
   }
 
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions(permissions.bank_account.delete)
   @Delete(`:${ACCOUNT_ID_PARAM}`)
-  @UseGuards(RolesGuard(UserRole.ADMIN))
-  deleteAccount(
-    @Param(ACCOUNT_ID_PARAM) accountId: string
-  ) {
+  deleteAccount(@Param(ACCOUNT_ID_PARAM) accountId: string) {
     return this.service.deleteBankAccount(accountId);
   }
 }

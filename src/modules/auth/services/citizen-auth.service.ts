@@ -12,6 +12,7 @@ import { ChangePasswordDto, CompleteSignupDto, SigninDto } from "../dto";
 import { baseUserSelect } from "src/common/prisma/selects";
 import { PrismaService } from "../../database/prisma.service";
 import { Citizen, User, VerificationStatus } from "@prisma/client";
+import { StorageService } from "src/modules/storage/storage.service";
 // import { PasswordResetService } from "./password-reset.service";
 
 export interface VerificationQuestion {
@@ -21,10 +22,12 @@ export interface VerificationQuestion {
 }
 
 @Injectable()
-export class AuthService {
+export class CitizenAuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
+    private readonly storageService: StorageService
+
     // private passwordResetService: PasswordResetService
   ) {}
 
@@ -121,7 +124,12 @@ export class AuthService {
     };
   }
 
-  async completeCitizenSignup(dto: CompleteSignupDto) {
+  async completeCitizenSignup(
+    dto: CompleteSignupDto,
+    uploads: {
+      avatar: Express.Multer.File;
+    }
+  ) {
     const citizen = await this.prisma.citizen.findUnique({
       where: { national_id: dto.nationalId },
     });
@@ -142,16 +150,26 @@ export class AuthService {
       throw new ForbiddenException("يجب إكمال التحقق من الهوية قبل التسجيل");
     }
 
+    let avatar: string | null = null;
+    if (uploads && uploads.avatar) {
+      const [file] = await this.storageService.handleUploads(
+        uploads.avatar,
+        "avatars"
+      );
+      avatar = file.url;
+    }
+
     const hashed = await bcrypt.hash(dto.password, 10);
 
     const updated = await this.prisma.citizen.update({
       where: { national_id: dto.nationalId },
       data: {
+        avatar,
         password: hashed,
         first_name: dto.firstName,
         father_name: dto.fatherName,
         grandfather_name: dto.grandfatherName,
-        family_members_number: dto.familyMembersNumber,
+        family_members_number: Number(dto.familyMembersNumber),
         family_name: dto.familyName,
         full_name: `${dto.firstName} ${dto.fatherName} ${dto.grandfatherName} ${dto.familyName}`,
         phone_number: dto.phoneNumber,
@@ -217,107 +235,6 @@ export class AuthService {
     };
   }
 
-  async adminSignIn(dto: SigninDto) {
-    const user = await this.prisma.user.findUnique({
-      where: { email: dto.email },
-      select: { ...baseUserSelect, password: true },
-    });
-    if (!user) throw new UnauthorizedException("Invalid credentials");
-    const isMatch = await bcrypt.compare(dto.password, user.password);
-    if (!isMatch) throw new UnauthorizedException("Invalid credentials");
-
-    const token = await this.jwtService.signAsync({
-      sub: user.id,
-      type: "user",
-      email: user.email,
-      role: user.role,
-    });
-    const { password, ...safeUser } = user as any;
-    return { access_token: token, user: safeUser };
-  }
-
-
-  // async adminResetPasswordRequest(email: string) {
-  //   const user = await this.prisma.user.findUnique({ where: { email } });
-
-  //   return this.passwordResetService.requestReset(
-  //     user,
-  //     (id, data) => this.prisma.user.update({ where: { id }, data }),
-  //     "/admin/reset-password"
-  //   );
-  // }
-
-  // async adminResetPassword(token: string, password: string) {
-  //   return this.passwordResetService.resetPassword(
-  //     token,
-  //     () =>
-  //       this.prisma.user.findMany({
-  //         where: { resetTokenExpiry: { gt: new Date() } },
-  //       }),
-  //     (id, data) =>
-  //       this.prisma.user.update({ where: { id }, data: { ...data, password } })
-  //   );
-  // }
-
-  // async citizenResetPasswordRequest(email: string) {
-  //   const citizen = await this.prisma.citizen.findFirst({ where: { email } });
-
-  //   return this.passwordResetService.requestReset(
-  //     citizen,
-  //     (id, data) => this.prisma.citizen.update({ where: { id }, data }),
-  //     "/citizen/reset-password"
-  //   );
-  // }
-
-  // async citizenResetPassword(token: string, password: string) {
-  //   return this.passwordResetService.resetPassword(
-  //     token,
-  //     () =>
-  //       this.prisma.citizen.findMany({
-  //         where: { resetTokenExpiry: { gt: new Date() } },
-  //       }),
-  //     (id, data) =>
-  //       this.prisma.citizen.update({
-  //         where: { id },
-  //         data: { ...data, password },
-  //       })
-  //   );
-  // }
-
-  async adminChangePassword(dto: ChangePasswordDto, user: User) {
-    const existingUser = await this.prisma.user.findUnique({
-      where: { id: user.id },
-      select: { id: true, password: true },
-    });
-
-    if (!existingUser) {
-      throw new UnauthorizedException("المستخدم غير موجود");
-    }
-
-    if (!existingUser.password) {
-      throw new UnauthorizedException("التسجيل غير مكتمل");
-    }
-
-    // Verify old password
-    const isMatch = await bcrypt.compare(dto.oldPassword, user.password);
-    if (!isMatch) {
-      throw new UnauthorizedException("كلمة المرور القديمة غير صحيحة");
-    }
-
-    // Hash and update new password
-    const hashedPassword = await bcrypt.hash(dto.newPassword, 10);
-
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: { password: hashedPassword },
-    });
-
-    return {
-      success: true,
-      message: "تم تغيير كلمة المرور بنجاح",
-    };
-  }
-
   async citizenChangePassword(dto: ChangePasswordDto, citizen: Citizen) {
     const existingCitizen = await this.prisma.citizen.findUnique({
       where: { id: citizen.id },
@@ -355,8 +272,31 @@ export class AuthService {
     };
   }
 
+  // async citizenResetPasswordRequest(email: string) {
+  //   const citizen = await this.prisma.citizen.findFirst({ where: { email } });
 
- 
+  //   return this.passwordResetService.requestReset(
+  //     citizen,
+  //     (id, data) => this.prisma.citizen.update({ where: { id }, data }),
+  //     "/citizen/reset-password"
+  //   );
+  // }
+
+  // async citizenResetPassword(token: string, password: string) {
+  //   return this.passwordResetService.resetPassword(
+  //     token,
+  //     () =>
+  //       this.prisma.citizen.findMany({
+  //         where: { resetTokenExpiry: { gt: new Date() } },
+  //       }),
+  //     (id, data) =>
+  //       this.prisma.citizen.update({
+  //         where: { id },
+  //         data: { ...data, password },
+  //       })
+  //   );
+  // }
+
   // ============================================
   // PRIVATE HELPER METHODS
   // ============================================

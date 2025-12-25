@@ -11,7 +11,7 @@ import * as bcrypt from "bcryptjs";
 import { baseUserSelect } from "src/common/prisma/selects";
 import * as ExcelJS from "exceljs";
 import { Response } from "express";
-import { User, UserRole } from "@prisma/client";
+import { User } from "@prisma/client";
 
 
 @Injectable()
@@ -101,7 +101,7 @@ export class UsersService {
   async searchSupervisors(query: string) {
     return this.prisma.user.findMany({
       where: {
-        role: UserRole.SUPERVISOR,
+        role: {},
         OR: [
           { name: { contains: query, mode: "insensitive" } },
           { email: { contains: query, mode: "insensitive" } },
@@ -113,6 +113,7 @@ export class UsersService {
 
   async exportUsers(res: Response) {
       const users = await this.prisma.user.findMany({
+        include:{role:true}
       });
   
       const workbook = new ExcelJS.Workbook();
@@ -131,7 +132,7 @@ export class UsersService {
           id: u.id,
           name: u.name,
           email: u.email,
-          role: u.role,
+          role: u.role.name,
           createdAt: u.createdAt.toLocaleString(),
         });
       });

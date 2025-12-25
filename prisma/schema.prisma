@@ -13,7 +13,8 @@ model User {
   email               String        @unique
   email_verified_at   DateTime?
   password            String
-  role                UserRole      @default(ADMIN)
+  roleId              Int
+  role                Role       @relation(fields: [roleId], references: [id])
   remember_token      String?
   createdAt           DateTime      @default(now())
   updatedAt           DateTime      @updatedAt
@@ -24,9 +25,48 @@ model User {
   @@map("users")
 }
 
+
+
+
+model Role {
+  id          Int              @id @default(autoincrement())
+  name        String           @unique
+  description String?
+  users       User[]
+  permissions RolePermission[]
+  createdAt   DateTime         @default(now())
+  @@map("rols")
+
+}
+
+
+model Permission {
+  id          Int              @id @default(autoincrement())
+  key         String           @unique // e.g. "user.create"
+  description String?
+  roles       RolePermission[]
+  @@map("permissions")
+}
+
+
+model RolePermission {
+  roleId       Int
+  permissionId Int
+
+  role         Role        @relation(fields: [roleId], references: [id])
+  permission   Permission  @relation(fields: [permissionId], references: [id])
+
+  @@id([roleId, permissionId])
+
+  @@map("role_permission")
+}
+
+
+
 model Citizen {
   id                  Int                @id @default(autoincrement())
   national_id         String             @unique
+  avatar              String?
   first_name          String?
   father_name         String?
   grandfather_name    String?
@@ -239,10 +279,6 @@ enum LocationType {
   CURRENT
 }
 
-enum UserRole {
-  ADMIN
-  SUPERVISOR
-}
 
 enum VerificationStatus {
   PENDING

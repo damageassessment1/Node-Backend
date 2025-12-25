@@ -12,6 +12,8 @@ import { HttpModule } from "@nestjs/axios";
 import { KeepAliveService } from "./keep-alive.service";
 import { BanksModule } from "./modules/banks/banks.module";
 import { DashboardStatsModule } from "./modules/dashboard-stats/dashboard-stats.module";
+import { PermissionsModule } from "./modules/permissions/permissions.module";
+import { RolesModule } from "./modules/roles/roles.module";
 // import { KeepAliveService } from "./keep-alive.service";
 
 @Module({
@@ -21,6 +23,8 @@ import { DashboardStatsModule } from "./modules/dashboard-stats/dashboard-stats.
     AuthModule,
     DatabaseModule,
     UsersModule,
+    PermissionsModule,
+    RolesModule,
     CitizensModule,
     ApplicationsModule,
     LocationsModule,

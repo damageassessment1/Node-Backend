@@ -10,11 +10,9 @@ import {
   Delete,
   Res,
 } from "@nestjs/common";
-import { RolesGuard } from "src/common/guards/roles.guard";
 import { User } from "src/common/decorators/user.decorator";
 import { MaybeSupervisor } from "src/common/decorators/maybe-supervisor.decorator";
 import { Response } from "express";
-import { UserRole } from "@prisma/client";
 import { CitizensService } from "../citizens.service";
 import { CreateCitizenDto } from "../dto/create-citizen.dto";
 import { UpdateCitizenDto } from "../dto/update-citizen.dto";
@@ -23,31 +21,38 @@ import {
   CITIZEN_ID_PARAM,
   ROUTES,
 } from "src/common/constats/routes.constants";
+import { permissions } from "src/common/constats/permissions.constants";
+import { PermissionsGuard } from "src/common/guards/permissions.guard";
+import { RequirePermissions } from "src/common/decorators/requir-permission.decorator";
 @Controller(ADMIN_CITIZENS_ROUTE_PREFIX)
 export class AdminCitizensController {
   constructor(private svc: CitizensService) {}
 
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions(permissions.citizen.create)
   @Post()
-  @UseGuards(RolesGuard(UserRole.ADMIN))
   create(@Body() dto: CreateCitizenDto) {
     return this.svc.create(dto);
   }
 
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions(permissions.citizen.view)
   @Get()
-  @UseGuards(RolesGuard(UserRole.ADMIN, UserRole.SUPERVISOR))
   findAll(@User() user, @MaybeSupervisor() sup?: any) {
     const effectiveUser = sup ?? user;
     return this.svc.findAll(effectiveUser);
   }
 
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions(permissions.citizen.export)
   @Get(ROUTES.ADMIN.ACTIONS.EXPORT)
-  @UseGuards(RolesGuard(UserRole.ADMIN))
   async exportCitizens(@Res() res: Response) {
     await this.svc.exportCitizens(res);
   }
 
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions(permissions.citizen.view)
   @Get(`:${CITIZEN_ID_PARAM}`)
-  @UseGuards(RolesGuard(UserRole.ADMIN, UserRole.SUPERVISOR))
   findOne(
     @Param(CITIZEN_ID_PARAM, ParseIntPipe) id: number,
     @User() user,
@@ -57,8 +62,9 @@ export class AdminCitizensController {
     return this.svc.findOne(id, effectiveUser);
   }
 
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions(permissions.citizen.update)
   @Patch(`:${CITIZEN_ID_PARAM}`)
-  @UseGuards(RolesGuard(UserRole.ADMIN))
   update(
     @Param(CITIZEN_ID_PARAM, ParseIntPipe) id: number,
     @Body() dto: UpdateCitizenDto,
@@ -67,8 +73,9 @@ export class AdminCitizensController {
     return this.svc.update(id, dto, user);
   }
 
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions(permissions.citizen.delete)
   @Delete(`:${CITIZEN_ID_PARAM}`)
-  @UseGuards(RolesGuard(UserRole.ADMIN))
   remove(@Param(CITIZEN_ID_PARAM, ParseIntPipe) id: number) {
     return this.svc.remove(id);
   }

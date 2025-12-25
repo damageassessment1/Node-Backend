@@ -12,7 +12,6 @@ import { AllExceptionsFilter } from "./common/filters/all-exceptions.filter";
 import { JwtService } from "@nestjs/jwt";
 import { PrismaService } from "./modules/database/prisma.service";
 import * as bcrypt from "bcryptjs";
-import { UserRole } from "@prisma/client";
 import { API_PREFIX } from "./common/constats/routes.constants";
 
 async function bootstrap() {
@@ -46,29 +45,29 @@ async function bootstrap() {
   }
 
   // Seed super admin if configured
-  try {
-    const superAdminEmail = process.env.SUPER_ADMIN_EMAIL;
-    const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD;
-    if (superAdminEmail && superAdminPassword) {
-      const existing = await prismaService.user.findUnique({
-        where: { email: superAdminEmail },
-      });
-      if (!existing) {
-        const hash = await bcrypt.hash(superAdminPassword, 10);
-        await prismaService.user.create({
-          data: {
-            email: superAdminEmail,
-            name: "Super Admin",
-            password: hash,
-            role: UserRole.ADMIN,
-          },
-        });
-        console.log("Super admin seeded:", superAdminEmail);
-      }
-    }
-  } catch (err) {
-    console.error("Failed to seed super admin", err);
-  }
+  // try {
+  //   const superAdminEmail = process.env.SUPER_ADMIN_EMAIL;
+  //   const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD;
+  //   if (superAdminEmail && superAdminPassword) {
+  //     const existing = await prismaService.user.findUnique({
+  //       where: { email: superAdminEmail },
+  //     });
+  //     if (!existing) {
+  //       const hash = await bcrypt.hash(superAdminPassword, 10);
+  //       await prismaService.user.create({
+  //         data: {
+  //           email: superAdminEmail,
+  //           name: "Super Admin",
+  //           password: hash,
+  //           role: UserRole.ADMIN,
+  //         },
+  //       });
+  //       console.log("Super admin seeded:", superAdminEmail);
+  //     }
+  //   }
+  // } catch (err) {
+  //   console.error("Failed to seed super admin", err);
+  // }
 
   // Serve static files
   app.useStaticAssets(join(__dirname, "..", "uploads"));

@@ -1,17 +1,22 @@
-import { UserRole } from '@prisma/client';
-import { IsEmail, IsOptional, IsString, IsEnum } from 'class-validator';
-
+import { IsEmail, IsOptional, IsString } from "class-validator";
+import { IsValidRoleId } from "src/common/decorators/validators/is-valid-roleId.decorator";
 
 export class UpdateUserDto {
-  @IsOptional()
-  @IsEmail()
-  email?: string;
-
   @IsOptional()
   @IsString()
   name?: string;
 
+
   @IsOptional()
-  @IsEnum(UserRole)
-  role?: UserRole;
+  @IsEmail()
+  email?: string;
+
+
+  @IsOptional()
+  @IsString()
+  password?: string;
+
+  @IsOptional()
+  @IsValidRoleId()
+  roleId?: number;
 }

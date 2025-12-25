@@ -54,8 +54,10 @@ export class StorageService {
     };
   }
 
-
-  async uploadOneFile(file: Express.Multer.File,folder:string): Promise<{
+  async uploadOneFile(
+    file: Express.Multer.File,
+    folder: string
+  ): Promise<{
     path: string;
     url: string;
     fileName: string;
@@ -65,7 +67,10 @@ export class StorageService {
     return await this.uploadFile(file, folder);
   }
 
-  async uploadFiles(files: Express.Multer.File[],folder:string): Promise<
+  async uploadFiles(
+    files: Express.Multer.File[],
+    folder: string
+  ): Promise<
     Array<{
       path: string;
       url: string;
@@ -90,5 +95,29 @@ export class StorageService {
     if (error) {
       throw new BadRequestException(`Error deleting file: ${error.message}`);
     }
+  }
+
+  async handleUploads(
+    files?: Express.Multer.File | Express.Multer.File[],
+    folder?: string
+  ): Promise<
+    Array<{
+      path: string;
+      url: string;
+      fileName: string;
+      fileSize: number;
+      mimeType: string;
+    }>
+  > {
+    if (!files) return [];
+
+    // Multiple files
+    if (Array.isArray(files)) {
+      return await this.uploadFiles(files, folder || "files");
+    }
+
+    // Single file
+    const uploaded = await this.uploadOneFile(files, folder || "files");
+    return [uploaded]; // normalize to array
   }
 }

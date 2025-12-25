@@ -9,9 +9,7 @@ import {
   Res,
   UseGuards,
 } from "@nestjs/common";
-import { RolesGuard } from "src/common/guards/roles.guard";
 import { User } from "src/common/decorators/user.decorator";
-import { UserRole } from "@prisma/client";
 import { Response } from "express";
 import { ApplicationsService } from "../applications.service";
 import { CreateApplicationDto, UpdateApplicationDto } from "../dto";
@@ -20,37 +18,42 @@ import {
   APPLICATION_ID_PARAM,
   ROUTES,
 } from "src/common/constats/routes.constants";
+import { PermissionsGuard } from "src/common/guards/permissions.guard";
+import { RequirePermissions } from "src/common/decorators/requir-permission.decorator";
+import { permissions } from "src/common/constats/permissions.constants";
 
 @Controller(ADMIN_APPLICATIONS_ROUTE_PREFIX)
 export class AdminApplicationsController {
   constructor(private readonly service: ApplicationsService) {}
 
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions(permissions.application.create)
   @Post()
-  @UseGuards(RolesGuard(UserRole.ADMIN))
   async create(@Body() dto: CreateApplicationDto, @User() user: any) {
     return this.service.create(dto, user);
   }
 
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions(permissions.application.view)
   @Get()
-  @UseGuards(RolesGuard(UserRole.ADMIN, UserRole.SUPERVISOR))
   async findAll(@User() user: any) {
     return this.service.findAll(user);
   }
-
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions(permissions.application.export)
   @Get(ROUTES.ADMIN.ACTIONS.EXPORT)
-  @UseGuards(RolesGuard(UserRole.ADMIN))
   async exportApplications(@Res() res: Response) {
     await this.service.exportApplications(res);
   }
-
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions(permissions.application.view)
   @Get(`:${APPLICATION_ID_PARAM}`)
-  @UseGuards(RolesGuard(UserRole.ADMIN, UserRole.SUPERVISOR))
   async findOne(@Param(APPLICATION_ID_PARAM) id: string, @User() user: any) {
     return this.service.findOne(id, user);
   }
-
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions(permissions.application.update)
   @Patch(`:${APPLICATION_ID_PARAM}`)
-  @UseGuards(RolesGuard(UserRole.ADMIN, UserRole.SUPERVISOR))
   async update(
     @Param(APPLICATION_ID_PARAM) id: string,
     @Body() dto: UpdateApplicationDto,
@@ -58,9 +61,9 @@ export class AdminApplicationsController {
   ) {
     return this.service.update(id, dto, user);
   }
-
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions(permissions.application.delete)
   @Delete(`:${APPLICATION_ID_PARAM}`)
-  @UseGuards(RolesGuard(UserRole.ADMIN))
   async remove(@Param(APPLICATION_ID_PARAM) id: string, @User() user: any) {
     return this.service.remove(id, user);
   }

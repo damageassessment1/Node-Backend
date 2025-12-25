@@ -1,5 +1,11 @@
-import { Body, Controller, Post, Put } from "@nestjs/common";
-import { AuthService } from "../services/auth.service";
+import {
+  Body,
+  Controller,
+  Post,
+  Put,
+  UploadedFiles,
+  UseInterceptors,
+} from "@nestjs/common";
 import {
   ChangePasswordDto,
   CitizenLoginDto,
@@ -18,10 +24,13 @@ import {
   ResetPasswordDto,
   ResetPasswordRequestDto,
 } from "../dto/change-password.dto";
+import { CitizenAuthService } from "../services/citizen-auth.service";
+import { FileFieldsInterceptor } from "@nestjs/platform-express";
+import { UploadsValidationPipe } from "src/common/validators/upload-validation.pipe";
 
 @Controller(CITIZEN_AUTH_ROUTE_PREFIX)
 export class CitizenAuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private authService: CitizenAuthService) {}
 
   /**
    * Step 1: Verify National ID
@@ -48,8 +57,17 @@ export class CitizenAuthController {
    */
   @Post(ROUTES.CITIZEN.AUTH.COMPLETE_SIGNUP)
   @Public()
-  async signup(@Body() dto: CompleteSignupDto) {
-    return this.authService.completeCitizenSignup(dto);
+  @UseInterceptors(FileFieldsInterceptor([{ name: "avatar", maxCount: 1 }]))
+  async signup(
+    @Body() dto: CompleteSignupDto,
+    @UploadedFiles(new UploadsValidationPipe())
+    uploads: {
+      avatar: Express.Multer.File[];
+    }
+  ) {
+    return this.authService.completeCitizenSignup(dto, {
+      avatar: uploads.avatar?.[0],
+    });
   }
 
   /**
@@ -68,7 +86,6 @@ export class CitizenAuthController {
   ) {
     return this.authService.citizenChangePassword(dto, citizen);
   }
-
 
   // @Post("reset-password/request")
   // @Public()

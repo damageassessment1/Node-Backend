@@ -34,7 +34,6 @@ export class CitizenLocationsController {
   )
   async addPreviousLocation(
     @Body() dto: AddPreviousLocationDto,
-
     @UploadedFiles(new UploadsValidationPipe())
     uploads: {
       beforeWarImage?: Express.Multer.File[];

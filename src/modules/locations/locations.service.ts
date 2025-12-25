@@ -98,7 +98,7 @@ export class LocationsService {
     let applicationExtraData = extraData ? JSON.parse(dto.extraData) : {};
 
     if (uploads && uploads.beforeWarImage) {
-      const [file] = await this.handleUploads(
+      const [file] = await this.storageService.handleUploads(
         uploads.beforeWarImage,
         "before_war_image"
       );
@@ -106,7 +106,7 @@ export class LocationsService {
     }
 
     if (uploads && uploads.afterWarImage) {
-      const [file] = await this.handleUploads(
+      const [file] = await this.storageService.handleUploads(
         uploads.afterWarImage,
         "after_war_image"
       );
@@ -114,7 +114,7 @@ export class LocationsService {
     }
 
     if (uploads && uploads.ownershipDocuments) {
-      applicationExtraData.ownershipDocuments = await this.handleUploads(
+      applicationExtraData.ownershipDocuments = await this.storageService.handleUploads(
         uploads.ownershipDocuments,
         "ownership_documents"
       );
@@ -173,30 +173,5 @@ export class LocationsService {
 
   // helper fucntions
 
-  private async handleUploads(
-    files?: Express.Multer.File | Express.Multer.File[],
-    folder?: string
-  ): Promise<
-    Array<{
-      path: string;
-      url: string;
-      fileName: string;
-      fileSize: number;
-      mimeType: string;
-    }>
-  > {
-    if (!files) return [];
-
-    // Multiple files
-    if (Array.isArray(files)) {
-      return await this.storageService.uploadFiles(files, folder || "files");
-    }
-
-    // Single file
-    const uploaded = await this.storageService.uploadOneFile(
-      files,
-      folder || "files"
-    );
-    return [uploaded]; // normalize to array
-  }
+ 
 }
