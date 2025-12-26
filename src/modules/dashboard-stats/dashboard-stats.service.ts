@@ -13,7 +13,15 @@ export class DashboardStatsService {
    * Returns all supervisors and all citizens in the system
    */
   async getAdminData(user: User) {
-    const [users, citizens, applications,locations,banking] = await Promise.all([
+    const [
+      users,
+      citizens,
+      applications,
+      locations,
+      banking,
+      roles,
+      permissions,
+    ] = await Promise.all([
       this.prisma.user.findMany({
         select: {
           ...baseUserSelect,
@@ -25,10 +33,21 @@ export class DashboardStatsService {
       }),
       this.prisma.application.findMany(),
       this.prisma.location.findMany(),
-      this.prisma.citizenBankAccount.findMany()
+      this.prisma.citizenBankAccount.findMany(),
+      this.prisma.role.findMany(),
+      this.prisma.permission.findMany(),
+
     ]);
 
-    return { users, citizens,applications,locations,banking };
+    return {
+      users,
+      citizens,
+      applications,
+      locations,
+      banking,
+      roles,
+      permissions,
+    };
   }
 
   /**
@@ -36,7 +55,7 @@ export class DashboardStatsService {
    * Returns citizens assigned to this supervisor
    */
   async getSupervisorData(user: User) {
-     const [ citizens, applications,locations] = await Promise.all([
+    const [citizens, applications, locations] = await Promise.all([
       this.prisma.citizen.findMany({
         select: citizenSelect,
         orderBy: { createdAt: "desc" },
@@ -45,9 +64,6 @@ export class DashboardStatsService {
       this.prisma.location.findMany(),
     ]);
 
-    return {citizens,applications,locations };
+    return { citizens, applications, locations };
   }
-
-
-  
 }
