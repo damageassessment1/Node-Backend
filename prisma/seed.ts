@@ -1,6 +1,5 @@
 import { PrismaClient } from "@prisma/client";
 import * as bcrypt from "bcryptjs";
-import { ACTIONS, ENTITIES } from "src/common/constats/permissions.constants";
 
 const prisma = new PrismaClient();
 
@@ -9,9 +8,21 @@ async function main() {
   // PERMISSIONS
   // -------------------------
 
+  const ENTITIES = [
+    "application",
+    "user",
+    "citizen",
+    "location",
+    "bank",
+    "bank-account",
+    "role",
+    "permission",
+  ];
 
-  const permissionsData = ENTITIES.flatMap(entity =>
-    ACTIONS.map(action => ({
+  const ACTIONS = ["create", "view", "update", "delete", "export"];
+
+  const permissionsData = ENTITIES.flatMap((entity) =>
+    ACTIONS.map((action) => ({
       key: `${entity}.${action}`,
       description: `${action} ${entity}`,
     }))
@@ -38,7 +49,7 @@ async function main() {
 
   // assign all permissions to role
   await prisma.rolePermission.createMany({
-    data: allPermissions.map(p => ({
+    data: allPermissions.map((p) => ({
       roleId: superAdminRole.id,
       permissionId: p.id,
     })),
@@ -67,7 +78,7 @@ async function main() {
 }
 
 main()
-  .catch(e => {
+  .catch((e) => {
     console.error(e);
     process.exit(1);
   })

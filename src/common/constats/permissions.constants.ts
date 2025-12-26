@@ -1,16 +1,3 @@
-export const ENTITIES = [
-  "application",
-  "user",
-  "citizen",
-  "location",
-  "bank",
-  "bank-account",
-  "role",
-  "permission",
-];
-
-export const ACTIONS = ["create", "view", "update", "delete", "export"];
-
 export const permissions = {
   application: {
     create: "application.create",
