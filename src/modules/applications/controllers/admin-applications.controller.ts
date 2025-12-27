@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Res,
   UseGuards,
 } from "@nestjs/common";
@@ -36,9 +37,13 @@ export class AdminApplicationsController {
   @UseGuards(PermissionsGuard)
   @RequirePermissions(permissions.application.view)
   @Get()
-  async findAll(@User() user: any) {
-    return this.service.findAll(user);
-  }
+  async findAll(
+  @User() user: any,
+  @Query('page') page = '1',
+  @Query('limit') limit = '10',
+) {
+  return this.service.findAll(+page, +limit);
+}
   @UseGuards(PermissionsGuard)
   @RequirePermissions(permissions.application.export)
   @Get(ROUTES.ADMIN.ACTIONS.EXPORT)

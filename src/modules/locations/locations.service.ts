@@ -29,18 +29,34 @@ export class LocationsService {
         ...dto,
         citizenId: dto.citizenId,
       },
-      select:locationSelect
+      select: locationSelect,
     });
 
     return loc;
   }
 
-  async findAll(user: User) {
-    // Both admin and supervisor can read locations
-    return this.prisma.location.findMany({
-      select: locationSelect,
-      orderBy: { createdAt: "desc" },
-    });
+  async findAll(page = 1, limit = 10) {
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await this.prisma.$transaction([
+      this.prisma.location.findMany({
+        select: locationSelect,
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+      }),
+      this.prisma.location.count(),
+    ]);
+
+    return {
+      data,
+      meta: {
+        page,
+        limit,
+        pagesCount: Math.ceil(total / limit),
+        total,
+      },
+    };
   }
 
   async findOne(id: number, user: any) {
@@ -71,7 +87,7 @@ export class LocationsService {
   async remove(id: number, user: any) {
     if (!id || typeof id !== "number" || isNaN(id))
       throw new BadRequestException("Valid numeric id param is required");
-  
+
     const existing = await this.prisma.location.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException("Location not found");
     // Unlink application if any
@@ -114,10 +130,11 @@ export class LocationsService {
     }
 
     if (uploads && uploads.ownershipDocuments) {
-      applicationExtraData.ownershipDocuments = await this.storageService.handleUploads(
-        uploads.ownershipDocuments,
-        "ownership_documents"
-      );
+      applicationExtraData.ownershipDocuments =
+        await this.storageService.handleUploads(
+          uploads.ownershipDocuments,
+          "ownership_documents"
+        );
     }
 
     const result = await this.prisma.$transaction(async (prisma) => {
@@ -172,6 +189,4 @@ export class LocationsService {
   }
 
   // helper fucntions
-
- 
 }

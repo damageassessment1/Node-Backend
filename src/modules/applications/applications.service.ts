@@ -51,12 +51,28 @@ export class ApplicationsService {
     return result;
   }
 
-  async findAll(user: any) {
-    // Admins & supervisors can list
-    return this.prisma.application.findMany({
-      select: applicationSelect,
-      orderBy: { createdAt: "desc" },
-    });
+  async findAll(page = 1, limit = 10) {
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await this.prisma.$transaction([
+      this.prisma.application.findMany({
+        select: applicationSelect,
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+      }),
+      this.prisma.application.count(),
+    ]);
+
+    return {
+      data,
+      meta: {
+        page,
+        limit,
+        pagesCount: Math.ceil(total / limit),
+        total,
+      },
+    };
   }
 
   async findOne(id: string, user: any) {
@@ -196,7 +212,11 @@ export class ApplicationsService {
     res.end();
   }
 
-  async updateApplication(id: string, dto: CitizenUpdateApplicationDto,citizen:Citizen) {
+  async updateApplication(
+    id: string,
+    dto: CitizenUpdateApplicationDto,
+    citizen: Citizen
+  ) {
     const application = await this.prisma.application.findUnique({
       where: { id },
       include: { locations: true },
@@ -206,7 +226,7 @@ export class ApplicationsService {
       throw new NotFoundException("الطلب غير موجود");
     }
 
-    if(citizen.id !== application.citizenId){
+    if (citizen.id !== application.citizenId) {
       throw new ForbiddenException("غير مسموح");
     }
 
@@ -216,7 +236,6 @@ export class ApplicationsService {
       throw new NotFoundException("الموقع غير موجود");
     }
 
-   
     const locationData: any = {};
 
     if (dto.latitude) locationData.latitude = dto.latitude;
@@ -231,7 +250,6 @@ export class ApplicationsService {
       });
     }
 
-   
     const applicationData: any = {};
 
     if (dto.extraData) {

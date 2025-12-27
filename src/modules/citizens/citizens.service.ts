@@ -69,21 +69,28 @@ export class CitizensService {
     return loc;
   }
 
-  async findAll(user: any) {
-    // If the requester is a supervisor, return only assigned citizens (read-only)
-    if (user?.role === "supervisor") {
-      return this.prisma.citizen.findMany({
-        select: citizenSelect,
+  async findAll( page = 1, limit = 10) {
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await this.prisma.$transaction([
+      this.prisma.citizen.findMany({
+        select: baseCitizenSelect,
         orderBy: { createdAt: "desc" },
-      });
-    }
-    // Admins get all citizens (don't return password)
-    return this.prisma.citizen.findMany({
-      select: {
-        ...baseCitizenSelect,
+        skip,
+        take: limit,
+      }),
+      this.prisma.citizen.count(),
+    ]);
+
+    return {
+      data,
+      meta: {
+        page,
+        limit,
+        pagesCount: Math.ceil(total / limit),
+        total,
       },
-      orderBy: { createdAt: "desc" },
-    });
+    };
   }
 
   async findOne(id: number, user: any) {

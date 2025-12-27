@@ -13,7 +13,6 @@ import * as ExcelJS from "exceljs";
 import { Response } from "express";
 import { User } from "@prisma/client";
 
-
 @Injectable()
 export class UsersService {
   constructor(private prisma: PrismaService) {}
@@ -43,13 +42,28 @@ export class UsersService {
     return user;
   }
 
-  async findAllUsers() {
-    return this.prisma.user.findMany({
-      select: baseUserSelect,
-      orderBy: {
-        createdAt: "desc",
+  async findAll(page = 1, limit = 10) {
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await this.prisma.$transaction([
+      this.prisma.user.findMany({
+        select: baseUserSelect,
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+      }),
+      this.prisma.user.count(),
+    ]);
+
+    return {
+      data,
+      meta: {
+        page,
+        limit,
+        pagesCount: Math.ceil(total / limit),
+        total,
       },
-    });
+    };
   }
 
   async update(id: number, updateUserDto: UpdateUserDto) {
@@ -79,7 +93,7 @@ export class UsersService {
     });
   }
 
-  async remove(id: number,authUser:User) {
+  async remove(id: number, authUser: User) {
     const user = await this.prisma.user.findUnique({
       where: { id },
     });
@@ -88,7 +102,7 @@ export class UsersService {
       throw new NotFoundException("User not found");
     }
 
-    if(user.id === authUser.id){
+    if (user.id === authUser.id) {
       throw new BadRequestException("you can not delete this user");
     }
 
@@ -112,41 +126,38 @@ export class UsersService {
   }
 
   async exportUsers(res: Response) {
-      const users = await this.prisma.user.findMany({
-        include:{role:true}
+    const users = await this.prisma.user.findMany({
+      include: { role: true },
+    });
+
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet("users");
+
+    sheet.columns = [
+      { header: "User ID", key: "id", width: 30 },
+      { header: "User Name", key: "name", width: 30 },
+      { header: "User Email", key: "email", width: 30 },
+      { header: "User Role", key: "role", width: 30 },
+      { header: "Created At", key: "createdAt", width: 20 },
+    ];
+
+    users.forEach((u) => {
+      sheet.addRow({
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        role: u.role.name,
+        createdAt: u.createdAt.toLocaleString(),
       });
-  
-      const workbook = new ExcelJS.Workbook();
-      const sheet = workbook.addWorksheet("users");
-  
-      sheet.columns = [
-        { header: "User ID", key: "id", width: 30 },
-        { header: "User Name", key: "name", width: 30 },
-        { header: "User Email", key: "email", width: 30 },
-        { header: "User Role", key: "role", width: 30 },
-        { header: "Created At", key: "createdAt", width: 20 },
-      ];
-  
-      users.forEach((u) => {
-        sheet.addRow({
-          id: u.id,
-          name: u.name,
-          email: u.email,
-          role: u.role.name,
-          createdAt: u.createdAt.toLocaleString(),
-        });
-      });
-  
-      res.setHeader(
-        "Content-Type",
-        "user/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-      );
-      res.setHeader(
-        "Content-Disposition",
-        "attachment; filename=users.xlsx"
-      );
-  
-      await workbook.xlsx.write(res);
-      res.end();
-    }
+    });
+
+    res.setHeader(
+      "Content-Type",
+      "user/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader("Content-Disposition", "attachment; filename=users.xlsx");
+
+    await workbook.xlsx.write(res);
+    res.end();
+  }
 }

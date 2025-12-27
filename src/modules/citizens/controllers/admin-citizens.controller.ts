@@ -9,6 +9,7 @@ import {
   Patch,
   Delete,
   Res,
+  Query,
 } from "@nestjs/common";
 import { User } from "src/common/decorators/user.decorator";
 import { MaybeSupervisor } from "src/common/decorators/maybe-supervisor.decorator";
@@ -24,6 +25,7 @@ import {
 import { permissions } from "src/common/constats/permissions.constants";
 import { PermissionsGuard } from "src/common/guards/permissions.guard";
 import { RequirePermissions } from "src/common/decorators/requir-permission.decorator";
+import { User as UserType } from "@prisma/client";
 @Controller(ADMIN_CITIZENS_ROUTE_PREFIX)
 export class AdminCitizensController {
   constructor(private svc: CitizensService) {}
@@ -38,9 +40,11 @@ export class AdminCitizensController {
   @UseGuards(PermissionsGuard)
   @RequirePermissions(permissions.citizen.view)
   @Get()
-  findAll(@User() user, @MaybeSupervisor() sup?: any) {
-    const effectiveUser = sup ?? user;
-    return this.svc.findAll(effectiveUser);
+  findAll(
+    @Query("page") page = "1",
+    @Query("limit") limit = "10"
+  ) {
+    return this.svc.findAll(+page,+limit);
   }
 
   @UseGuards(PermissionsGuard)

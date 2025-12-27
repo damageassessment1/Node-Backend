@@ -23,15 +23,33 @@ export class BanksService {
     });
   }
 
-
-   /* =========================
+  /* =========================
      Get All Bank Accouts For All Citizens (Admin)
   ========================= */
-  async getAllBankAcountsForCitizens() {
-    return this.prisma.citizenBankAccount.findMany({
-      orderBy: { id: "asc" },
-      include: { bank: true, citizen: { select: baseCitizenSelect } },
-    });
+ 
+
+  async findAll(page = 1, limit = 10) {
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await this.prisma.$transaction([
+      this.prisma.citizenBankAccount.findMany({
+        orderBy: { id: "asc" },
+        include: { bank: true, citizen: { select: baseCitizenSelect } },
+        skip,
+        take: limit,
+      }),
+      this.prisma.citizenBankAccount.count(),
+    ]);
+
+    return {
+      data,
+      meta: {
+        page,
+        limit,
+        pagesCount: Math.ceil(total / limit),
+        total,
+      },
+    };
   }
 
   /* =========================
@@ -39,7 +57,7 @@ export class BanksService {
   ========================= */
   async createMyBankAccount(dto: CreateBankAccountDto, citizen: Citizen) {
     await this.ensureBankExists(dto.bankId);
-    await this.ensureNoDuplicateBankAccount(citizen.id,dto.bankId)
+    await this.ensureNoDuplicateBankAccount(citizen.id, dto.bankId);
 
     if (dto.isPrimary) {
       await this.clearPrimaryAccount(citizen.id);
@@ -62,13 +80,11 @@ export class BanksService {
   /* =========================
      ADMIN (CITIZEN SCOPED)
   ========================= */
-  async createBankAccountForCitizen(
-    dto: CreateBankAccountDto
-  ) {
+  async createBankAccountForCitizen(dto: CreateBankAccountDto) {
     await this.ensureCitizenExists(dto.citizenId);
     await this.ensureBankExists(dto.bankId);
 
-    await this.ensureNoDuplicateBankAccount(dto.citizenId,dto.bankId)
+    await this.ensureNoDuplicateBankAccount(dto.citizenId, dto.bankId);
 
     if (dto.isPrimary) {
       await this.clearPrimaryAccount(dto.citizenId);
@@ -76,7 +92,7 @@ export class BanksService {
 
     return this.prisma.citizenBankAccount.create({
       data: {
-        citizenId:dto.citizenId,
+        citizenId: dto.citizenId,
         bankId: dto.bankId,
         accountHolderName: dto.accountHolderName,
         accountNumber: dto.accountNumber,
@@ -108,11 +124,11 @@ export class BanksService {
     });
   }
 
-  async updateBankAccount(
-    accountId: string,
-    dto: UpdateBankAccountDto
-  ) {
-    const account = await this.findCitizenAccountOrFail(dto.citizenId, accountId);
+  async updateBankAccount(accountId: string, dto: UpdateBankAccountDto) {
+    const account = await this.findCitizenAccountOrFail(
+      dto.citizenId,
+      accountId
+    );
 
     if (dto.isPrimary) {
       await this.clearPrimaryAccount(dto.citizenId);
@@ -136,7 +152,7 @@ export class BanksService {
     });
   }
 
-  async deleteBankAccount( accountId: string) {
+  async deleteBankAccount(accountId: string) {
     return this.prisma.citizenBankAccount.delete({
       where: { id: accountId },
     });
@@ -258,21 +274,20 @@ export class BanksService {
   }
 
   private async ensureNoDuplicateBankAccount(
-  citizenId: number,
-  bankId: string,
-) {
-  const exists = await this.prisma.citizenBankAccount.findFirst({
-    where: {
-      citizenId,
-      bankId,
-    },
-  });
+    citizenId: number,
+    bankId: string
+  ) {
+    const exists = await this.prisma.citizenBankAccount.findFirst({
+      where: {
+        citizenId,
+        bankId,
+      },
+    });
 
-  if (exists) {
-    throw new ForbiddenException(
-      'Citizen already has an account in this bank',
-    );
+    if (exists) {
+      throw new ForbiddenException(
+        "Citizen already has an account in this bank"
+      );
+    }
   }
-}
-
 }
