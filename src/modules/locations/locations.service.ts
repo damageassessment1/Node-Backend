@@ -29,7 +29,7 @@ export class LocationsService {
         ...dto,
         citizenId: dto.citizenId,
       },
-      select:locationSelect
+      select: locationSelect,
     });
 
     return loc;
@@ -71,7 +71,7 @@ export class LocationsService {
   async remove(id: number, user: any) {
     if (!id || typeof id !== "number" || isNaN(id))
       throw new BadRequestException("Valid numeric id param is required");
-  
+
     const existing = await this.prisma.location.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException("Location not found");
     // Unlink application if any
@@ -114,10 +114,11 @@ export class LocationsService {
     }
 
     if (uploads && uploads.ownershipDocuments) {
-      applicationExtraData.ownershipDocuments = await this.storageService.handleUploads(
-        uploads.ownershipDocuments,
-        "ownership_documents"
-      );
+      applicationExtraData.ownershipDocuments =
+        await this.storageService.handleUploads(
+          uploads.ownershipDocuments,
+          "ownership_documents"
+        );
     }
 
     const result = await this.prisma.$transaction(async (prisma) => {
@@ -152,26 +153,32 @@ export class LocationsService {
     type: LocationType,
     citizen: Citizen
   ) {
-    const currentLocation = this.prisma.location.findMany({
-      where: { citizenId: citizen.id, type: LocationType.CURRENT },
+    const existingLocation = await this.prisma.location.findFirst({
+      where: {
+        citizenId: citizen.id,
+        type: LocationType.CURRENT,
+      },
     });
 
-    const currentLocationExists = (await currentLocation).length >= 1;
-    if (currentLocationExists) {
-      throw new NotFoundException("This user already has a current location");
+    if (existingLocation) {
+      // update
+      return this.prisma.location.update({
+        where: { id: existingLocation.id },
+        data: {
+          ...dto,
+        },
+      });
     }
 
-    const location = await this.prisma.location.create({
+    // create
+    return this.prisma.location.create({
       data: {
         ...dto,
         citizenId: citizen.id,
-        type,
+        type: LocationType.CURRENT,
       },
     });
-    return location;
   }
 
   // helper fucntions
-
- 
 }

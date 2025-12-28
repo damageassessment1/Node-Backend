@@ -12,7 +12,7 @@ import { ChangePasswordDto, CompleteSignupDto, SigninDto } from "../dto";
 import { baseUserSelect } from "src/common/prisma/selects";
 import { PrismaService } from "../../database/prisma.service";
 import { Citizen, User, VerificationStatus } from "@prisma/client";
-// import { PasswordResetService } from "./password-reset.service";
+import { PasswordResetService } from "./password-reset.service";
 
 export interface VerificationQuestion {
   key: string;
@@ -24,8 +24,8 @@ export interface VerificationQuestion {
 export class AdminAuthService {
   constructor(
     private prisma: PrismaService,
-    private jwtService: JwtService
-    // private passwordResetService: PasswordResetService
+    private jwtService: JwtService,
+    private passwordResetService: PasswordResetService
   ) {}
 
   async adminSignIn(dto: SigninDto) {
@@ -83,25 +83,25 @@ export class AdminAuthService {
     };
   }
 
-  // async adminResetPasswordRequest(email: string) {
-  //   const user = await this.prisma.user.findUnique({ where: { email } });
+  async adminResetPasswordRequest(email: string) {
+    const user = await this.prisma.user.findUnique({ where: { email } });
 
-  //   return this.passwordResetService.requestReset(
-  //     user,
-  //     (id, data) => this.prisma.user.update({ where: { id }, data }),
-  //     "/admin/reset-password"
-  //   );
-  // }
+    return this.passwordResetService.requestReset(
+      user,
+      (id, data) => this.prisma.user.update({ where: { id }, data }),
+      "/admin/reset-password"
+    );
+  }
 
-  // async adminResetPassword(token: string, password: string) {
-  //   return this.passwordResetService.resetPassword(
-  //     token,
-  //     () =>
-  //       this.prisma.user.findMany({
-  //         where: { resetTokenExpiry: { gt: new Date() } },
-  //       }),
-  //     (id, data) =>
-  //       this.prisma.user.update({ where: { id }, data: { ...data, password } })
-  //   );
-  // }
+  async adminResetPassword(token: string, password: string) {
+    return this.passwordResetService.resetPassword(
+      token,
+      () =>
+        this.prisma.user.findMany({
+          where: { resetTokenExpiry: { gt: new Date() } },
+        }),
+      (id, data) =>
+        this.prisma.user.update({ where: { id }, data: { ...data, password } })
+    );
+  }
 }

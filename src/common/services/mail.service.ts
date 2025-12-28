@@ -1,3 +1,40 @@
+import { Injectable } from "@nestjs/common";
+import * as nodemailer from "nodemailer";
+
+@Injectable()
+export class MailService {
+
+  private transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT),
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 10000,
+  });
+
+  async sendResetPasswordEmail(
+    to: string,
+    name: string,
+    resetLink: string
+  ) {
+    return this.transporter.sendMail({
+      from: process.env.MAIL_FROM,
+      to,
+      subject: "إعادة تعيين كلمة المرور",
+      html: `
+        <p>مرحباً ${name}</p>
+        <p>اضغط على الرابط لإعادة تعيين كلمة المرور:</p>
+        <a href="${resetLink}">إعادة تعيين كلمة المرور</a>
+      `,
+    });
+  }
+}
+
+
 // import { Injectable } from "@nestjs/common";
 // import Mailgun from "mailgun.js";
 // import * as FormData from "form-data";
@@ -32,41 +69,6 @@
 //   }
 // }
 
-// import { Injectable } from "@nestjs/common";
-// import * as nodemailer from "nodemailer";
-
-// @Injectable()
-// export class MailService {
-
-//   private transporter = nodemailer.createTransport({
-//     host: process.env.MAILTRAP_HOST,
-//       port: Number(process.env.MAILTRAP_PORT),
-//       auth: {
-//         user: process.env.MAILTRAP_USER,
-//         pass: process.env.MAILTRAP_PASS,
-//       },
-//       connectionTimeout: 10000,
-//       greetingTimeout: 10000,
-//       socketTimeout: 10000,
-//   });
-
-//   async sendResetPasswordEmail(
-//     to: string,
-//     name: string,
-//     resetLink: string
-//   ) {
-//     return this.transporter.sendMail({
-//       from: process.env.MAIL_FROM,
-//       to,
-//       subject: "إعادة تعيين كلمة المرور",
-//       html: `
-//         <p>مرحباً ${name}</p>
-//         <p>اضغط على الرابط لإعادة تعيين كلمة المرور:</p>
-//         <a href="${resetLink}">إعادة تعيين كلمة المرور</a>
-//       `,
-//     });
-//   }
-// }
 
 
 

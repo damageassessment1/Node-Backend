@@ -1,6 +1,7 @@
 export const baseCitizenSelect = {
   id: true,
   national_id: true,
+  avatar: true,
   first_name: true,
   father_name: true,
   grandfather_name: true,
@@ -8,12 +9,23 @@ export const baseCitizenSelect = {
   full_name: true,
   family_members_number: true,
   phone_number: true,
+  whatsapp_number: true,
   email: true,
   verification_status: true,
-  status: true,
   createdAt: true,
   updatedAt: true,
 } as const;
+
+export const citizenProfileSelect = {
+  ...baseCitizenSelect,
+  place_of_birth: true,
+  country: true,
+  date_of_birth: true,
+  gender: true,
+  marital_status: true,
+  status: true,
+
+};
 
 export const citizenSelect = {
   ...baseCitizenSelect,
