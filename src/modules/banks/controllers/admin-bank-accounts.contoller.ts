@@ -26,14 +26,13 @@ import { permissions } from "src/common/constats/permissions.constants";
 export class AdminBankAccountsController {
   constructor(private service: BanksService) {}
 
+ 
+
   @UseGuards(PermissionsGuard)
   @RequirePermissions(permissions.bank_account.view)
   @Get()
-  getAllBankAcountsForCitizens(
-    @Query("page") page = "1",
-    @Query("limit") limit = "10"
-  ) {
-    return this.service.findAll(+page, +limit);
+  getAllBankAcountsForCitizens() {
+    return this.service.findAll();
   }
 
   @UseGuards(PermissionsGuard)

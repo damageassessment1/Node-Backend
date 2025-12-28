@@ -11,7 +11,8 @@ import * as bcrypt from "bcryptjs";
 import { baseUserSelect } from "src/common/prisma/selects";
 import * as ExcelJS from "exceljs";
 import { Response } from "express";
-import { User } from "@prisma/client";
+import { Prisma, User } from "@prisma/client";
+import { UserFilters } from "src/common/types/users";
 
 @Injectable()
 export class UsersService {
@@ -42,26 +43,42 @@ export class UsersService {
     return user;
   }
 
-  async findAll(page = 1, limit = 10) {
+  async findAll(page: number, limit: number, filters: UserFilters) {
     const skip = (page - 1) * limit;
+
+    const where: Prisma.UserWhereInput = {
+      ...(filters.fullName && {
+        name: {
+          contains: filters.fullName,
+          mode: "insensitive",
+        },
+      }),
+      ...(filters.email && {
+        email: {
+          contains: filters.email,
+          mode: "insensitive",
+        },
+      }),
+    };
 
     const [data, total] = await this.prisma.$transaction([
       this.prisma.user.findMany({
+        where,
         select: baseUserSelect,
-        orderBy: { createdAt: "desc" },
         skip,
         take: limit,
+        orderBy: { createdAt: "desc" },
       }),
-      this.prisma.user.count(),
+      this.prisma.user.count({ where }),
     ]);
 
     return {
       data,
       meta: {
+        total,
         page,
         limit,
-        pagesCount: Math.ceil(total / limit),
-        total,
+        totalPages: Math.ceil(total / limit),
       },
     };
   }

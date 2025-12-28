@@ -12,10 +12,14 @@ import * as bcrypt from "bcryptjs";
 import { v4 as uuidv4 } from "uuid";
 import * as ExcelJS from "exceljs";
 import { Response } from "express";
-import { baseCitizenSelect, citizenProfileSelect } from "src/common/prisma/selects/citizen.select";
-import { Citizen } from "@prisma/client";
+import {
+  baseCitizenSelect,
+  citizenProfileSelect,
+} from "src/common/prisma/selects/citizen.select";
+import { Citizen, Prisma } from "@prisma/client";
 import { UpdateProfileDto } from "./dto/update-profile.dto";
 import { StorageService } from "../storage/storage.service";
+import { CitizenFilters } from "src/common/types/citizen";
 @Injectable()
 export class CitizensService {
   constructor(
@@ -73,8 +77,21 @@ export class CitizensService {
     return loc;
   }
 
-  async findAll( page = 1, limit = 10) {
+  async findAll(page = 1, limit = 10, filters: CitizenFilters = {}) {
     const skip = (page - 1) * limit;
+
+    const where: Prisma.CitizenWhereInput = {
+      ...(filters.fullName && {
+        full_name: { contains: filters.fullName, mode: "insensitive" },
+      }),
+      ...(filters.nationalId && { national_id: filters.nationalId }),
+      ...(filters.phone && {
+        OR: [
+          { phone_number: { contains: filters.phone } },
+          { whatsapp_number: { contains: filters.phone } },
+        ],
+      }),
+    };
 
     const [data, total] = await this.prisma.$transaction([
       this.prisma.citizen.findMany({
@@ -82,8 +99,9 @@ export class CitizensService {
         orderBy: { createdAt: "desc" },
         skip,
         take: limit,
+        where,
       }),
-      this.prisma.citizen.count(),
+      this.prisma.citizen.count({ where }),
     ]);
 
     return {
@@ -155,14 +173,13 @@ export class CitizensService {
     }
 
     if (uploads && uploads.avatar) {
-
       const [file] = await this.storageService.handleUploads(
         uploads.avatar,
         "avatars"
       );
       dto["avatar"] = file.url;
 
-      this.storageService.deleteFile(this.getImagePath(citizen.avatar))
+      this.storageService.deleteFile(this.getImagePath(citizen.avatar));
     }
 
     return this.prisma.citizen.update({
@@ -170,7 +187,7 @@ export class CitizensService {
       data: {
         ...dto,
       },
-      select:citizenProfileSelect
+      select: citizenProfileSelect,
     });
   }
 

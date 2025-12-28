@@ -16,7 +16,7 @@ export const baseCitizenSelect = {
   verification_status: true,
   createdAt: true,
   updatedAt: true,
-} as const;
+} 
 
 export const citizenProfileSelect = {
   ...baseCitizenSelect,
@@ -36,4 +36,4 @@ export const citizenSelect = {
      ...baseLocationSelect
     },
   },
-} as const;
+}

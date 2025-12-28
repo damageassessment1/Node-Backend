@@ -39,8 +39,13 @@ export class UsersController {
   @UseGuards(PermissionsGuard)
   @RequirePermissions(permissions.user.view)
   @Get()
-  findAll(@Query("page") page = "1", @Query("limit") limit = "10") {
-    return this.usersService.findAll(+page, +limit);
+  async findAll(
+    @Query("page") page = "1",
+    @Query("limit") limit = "10",
+    @Query("fullName") fullName?: string,
+    @Query("email") email?: string
+  ) {
+    return this.usersService.findAll(+page, +limit, { fullName, email });
   }
 
   @UseGuards(PermissionsGuard)

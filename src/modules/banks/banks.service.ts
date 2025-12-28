@@ -26,30 +26,12 @@ export class BanksService {
   /* =========================
      Get All Bank Accouts For All Citizens (Admin)
   ========================= */
- 
 
-  async findAll(page = 1, limit = 10) {
-    const skip = (page - 1) * limit;
-
-    const [data, total] = await this.prisma.$transaction([
-      this.prisma.citizenBankAccount.findMany({
-        orderBy: { id: "asc" },
-        include: { bank: true, citizen: { select: baseCitizenSelect } },
-        skip,
-        take: limit,
-      }),
-      this.prisma.citizenBankAccount.count(),
-    ]);
-
-    return {
-      data,
-      meta: {
-        page,
-        limit,
-        pagesCount: Math.ceil(total / limit),
-        total,
-      },
-    };
+  async findAll() {
+    return this.prisma.citizenBankAccount.findMany({
+      orderBy: { id: "asc" },
+      include: { bank: true, citizen: { select: baseCitizenSelect } },
+    });
   }
 
   /* =========================

@@ -41,10 +41,13 @@ export class AdminCitizensController {
   @RequirePermissions(permissions.citizen.view)
   @Get()
   findAll(
-    @Query("page") page = "1",
-    @Query("limit") limit = "10"
+    @Query('page') page = "1",
+    @Query('limit') limit = "10",
+    @Query('fullName') fullName?: string,
+    @Query('nationalId') nationalId?: string,
+    @Query('phone') phone?: string
   ) {
-    return this.svc.findAll(+page,+limit);
+    return this.svc.findAll(+page, +limit, { fullName, nationalId, phone });
   }
 
   @UseGuards(PermissionsGuard)
