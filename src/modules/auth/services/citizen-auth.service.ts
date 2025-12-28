@@ -224,7 +224,6 @@ export class CitizenAuthService {
       type: "citizen",
     });
 
-    // Remove password and send user object with application
     const { password: _, ...user } = citizen;
 
     return {

@@ -14,6 +14,7 @@ export const baseApplicationSelect = {
       type: true,
       address: true,
       neighborhood: true,
+      landmark: true,
       status: true,
       governorate: true,
       town: true,

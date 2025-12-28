@@ -15,7 +15,7 @@ export class CitizenApplicationsController {
   constructor(private readonly service: ApplicationsService) {}
 
   @Get()
-  async getMyApplicationInfo(@Citizen() user: CitizenType) {
+  async getMyApplications(@Citizen() user: CitizenType) {
     return this.service.getMyApplications(user);
   }
 

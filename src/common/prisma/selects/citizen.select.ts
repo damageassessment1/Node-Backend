@@ -1,3 +1,5 @@
+import { baseLocationSelect } from "./location.select";
+
 export const baseCitizenSelect = {
   id: true,
   national_id: true,
@@ -31,22 +33,7 @@ export const citizenSelect = {
   ...baseCitizenSelect,
   locations: {
     select: {
-      id: true,
-      type: true,
-      address: true,
-      neighborhood: true,
-      governorate: true,
-      status: true,
-      town: true,
-      street: true,
-      block_number: true,
-      house_number: true,
-      latitude: true,
-      longitude: true,
-      notes: true,
-      extraData: true,
-      createdAt: true,
-      updatedAt: true,
+     ...baseLocationSelect
     },
   },
 } as const;

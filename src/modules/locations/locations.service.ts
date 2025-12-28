@@ -97,6 +97,8 @@ export class LocationsService {
     const { extraData, ...locationDto } = dto;
     let applicationExtraData = extraData ? JSON.parse(dto.extraData) : {};
 
+
+    // handle images
     if (uploads && uploads.beforeWarImage) {
       const [file] = await this.storageService.handleUploads(
         uploads.beforeWarImage,
@@ -141,7 +143,6 @@ export class LocationsService {
         },
       });
 
-      // The transaction commits if both operations are successful
       return { application, location };
     });
 
