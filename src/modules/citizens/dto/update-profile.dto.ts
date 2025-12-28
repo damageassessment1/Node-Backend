@@ -5,6 +5,7 @@ import {
   IsNumber,
   IsDateString,
   IsEnum,
+  IsNumberString,
 } from "class-validator";
 
 
@@ -27,11 +28,11 @@ export class UpdateProfileDto {
   family_name?: string;
 
   @IsOptional()
-  @IsNumber()
+  @IsNumberString()
   family_members_number?: number;
 
   @IsOptional()
-  @IsString()
+  @IsNumberString()
   whatsapp_number?: string;
 
   @IsOptional()

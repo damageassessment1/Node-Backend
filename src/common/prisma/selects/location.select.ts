@@ -1,12 +1,13 @@
 import { baseCitizenSelect } from "./citizen.select";
 
-export const locationSelect = {
+export const baseLocationSelect = {
   id: true,
   type: true,
   address: true,
   neighborhood: true,
   governorate: true,
-  status:true,
+  landmark: true,
+  status: true,
   town: true,
   street: true,
   block_number: true,
@@ -15,12 +16,17 @@ export const locationSelect = {
   longitude: true,
   notes: true,
   extraData: true,
+  createdAt: true,
+  citizenId: true,
   applicationId: true,
+  updatedAt: true,
+} as const;
+
+export const locationSelect = {
+  ...baseLocationSelect,
   citizen: {
     select: {
       ...baseCitizenSelect,
     },
   },
-  createdAt: true,
-  updatedAt: true,
 } as const;

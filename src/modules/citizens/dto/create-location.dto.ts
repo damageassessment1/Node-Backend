@@ -11,6 +11,10 @@ export class CreateLocationDto {
 
   @IsOptional()
   @IsString()
+  landmark?: string;
+
+  @IsOptional()
+  @IsString()
   town?: string;
 
   @IsOptional()

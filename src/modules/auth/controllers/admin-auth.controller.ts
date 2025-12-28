@@ -25,20 +25,20 @@ export class AdminAuthController {
     return this.authService.adminChangePassword(dto, user);
   }
 
-  // @Post("reset-password/request")
-  // @Public()
-  // async resetPasswordRequest(
-  //   @Body() dto: ResetPasswordRequestDto
-  // ) {
-  //   return this.authService.adminResetPasswordRequest(dto.email);
-  // }
+  @Post("reset-password/request")
+  @Public()
+  async resetPasswordRequest(
+    @Body() dto: ResetPasswordRequestDto
+  ) {
+    return this.authService.adminResetPasswordRequest(dto.email);
+  }
 
-  // // Step 2: Reset password
-  // @Post("reset-password")
-  // @Public()
-  // async resetPassword(
-  //   @Body() dto: ResetPasswordDto
-  // ) {
-  //   return this.authService.adminResetPassword(dto.token, dto.newPassword);
-  // }
+  // Step 2: Reset password
+  @Post("reset-password")
+  @Public()
+  async resetPassword(
+    @Body() dto: ResetPasswordDto
+  ) {
+    return this.authService.adminResetPassword(dto.token, dto.newPassword);
+  }
 }

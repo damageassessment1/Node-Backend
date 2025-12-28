@@ -113,6 +113,8 @@ export class LocationsService {
     const { extraData, ...locationDto } = dto;
     let applicationExtraData = extraData ? JSON.parse(dto.extraData) : {};
 
+
+    // handle images
     if (uploads && uploads.beforeWarImage) {
       const [file] = await this.storageService.handleUploads(
         uploads.beforeWarImage,
@@ -157,7 +159,6 @@ export class LocationsService {
         },
       });
 
-      // The transaction commits if both operations are successful
       return { application, location };
     });
 
@@ -169,23 +170,31 @@ export class LocationsService {
     type: LocationType,
     citizen: Citizen
   ) {
-    const currentLocation = this.prisma.location.findMany({
-      where: { citizenId: citizen.id, type: LocationType.CURRENT },
+    const existingLocation = await this.prisma.location.findFirst({
+      where: {
+        citizenId: citizen.id,
+        type: LocationType.CURRENT,
+      },
     });
 
-    const currentLocationExists = (await currentLocation).length >= 1;
-    if (currentLocationExists) {
-      throw new NotFoundException("This user already has a current location");
+    if (existingLocation) {
+      // update
+      return this.prisma.location.update({
+        where: { id: existingLocation.id },
+        data: {
+          ...dto,
+        },
+      });
     }
 
-    const location = await this.prisma.location.create({
+    // create
+    return this.prisma.location.create({
       data: {
         ...dto,
         citizenId: citizen.id,
-        type,
+        type: LocationType.CURRENT,
       },
     });
-    return location;
   }
 
   // helper fucntions

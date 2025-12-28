@@ -12,12 +12,16 @@ import * as bcrypt from "bcryptjs";
 import { v4 as uuidv4 } from "uuid";
 import * as ExcelJS from "exceljs";
 import { Response } from "express";
-import { baseCitizenSelect } from "src/common/prisma/selects/citizen.select";
+import { baseCitizenSelect, citizenProfileSelect } from "src/common/prisma/selects/citizen.select";
 import { Citizen } from "@prisma/client";
 import { UpdateProfileDto } from "./dto/update-profile.dto";
+import { StorageService } from "../storage/storage.service";
 @Injectable()
 export class CitizensService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private readonly storageService: StorageService
+  ) {}
 
   async create(createDto: CreateCitizenDto) {
     const existing = await this.prisma.citizen.findUnique({
@@ -124,7 +128,22 @@ export class CitizensService {
     });
   }
 
-  async updateProfileData(citizen: Citizen, dto: UpdateProfileDto) {
+  async updateProfileData(
+    citizen: Citizen,
+    dto: UpdateProfileDto,
+    uploads: {
+      avatar: Express.Multer.File;
+    }
+  ) {
+    // console.log(uploads);
+    // console.log(
+    //   this.getImagePath(
+    //     "https://oufjobpdjqlveupjciuj.supabase.co/storage/v1/object/public/damageassessment/after_war_image/32a3b633-13ef-46de-a887-f1bdb56cfd17.png"
+    //   )
+    // );
+
+    // return;
+
     if (
       dto.first_name ||
       dto.father_name ||
@@ -135,12 +154,23 @@ export class CitizensService {
         `${dto.first_name || citizen.first_name} ${dto.father_name || citizen.father_name} ${dto.grandfather_name || citizen.grandfather_name} ${dto.family_name || citizen.family_name}`.trim();
     }
 
+    if (uploads && uploads.avatar) {
+
+      const [file] = await this.storageService.handleUploads(
+        uploads.avatar,
+        "avatars"
+      );
+      dto["avatar"] = file.url;
+
+      this.storageService.deleteFile(this.getImagePath(citizen.avatar))
+    }
+
     return this.prisma.citizen.update({
       where: { id: citizen.id },
       data: {
         ...dto,
-        date_of_birth: dto.date_of_birth ? new Date(dto.date_of_birth) : null,
       },
+      select:citizenProfileSelect
     });
   }
 
@@ -188,5 +218,12 @@ export class CitizensService {
 
     await workbook.xlsx.write(res);
     res.end();
+  }
+
+  private getImagePath(url?: string | null): string | undefined {
+    if (!url) return;
+
+    const parts = url.split("/");
+    return parts.slice(-2).join("/");
   }
 }

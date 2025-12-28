@@ -86,7 +86,8 @@ export class StorageService {
     return await Promise.all(uploadPromises);
   }
 
-  async deleteFile(filePath: string): Promise<void> {
+  async deleteFile(filePath: string | undefined): Promise<void> {
+    if (!filePath) return;
     const { error } = await this.supabaseService
       .getClient()
       .storage.from(this.bucket ?? "")

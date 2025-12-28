@@ -108,6 +108,7 @@ model Location {
   neighborhood   String?
   governorate   String?
   town          String?
+  landmark      String?  
   street        String?
   block_number  String?
   house_number  String?

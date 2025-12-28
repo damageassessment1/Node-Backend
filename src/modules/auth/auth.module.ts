@@ -7,8 +7,8 @@ import { AdminAuthService } from "./services/admin-auth.service";
 import { CitizenAuthService } from "./services/citizen-auth.service";
 import { SupabaseService } from "src/common/services";
 import { StorageService } from "../storage/storage.service";
-// import { MailService } from "src/common/services/mail.service";
-// import { PasswordResetService } from "./services/password-reset.service";
+import { MailService } from "src/common/services/mail.service";
+import { PasswordResetService } from "./services/password-reset.service";
 
 @Module({
   imports: [
@@ -23,7 +23,9 @@ import { StorageService } from "../storage/storage.service";
     CitizenAuthService,
     SupabaseService,
     StorageService,
-  ], //PasswordResetService,MailService
+    PasswordResetService,
+    MailService,
+  ],
   controllers: [AdminAuthController, CitizenAuthController],
   exports: [JwtModule], // Export JwtModule so other modules can use it
 })
