@@ -10,12 +10,13 @@ import { UpdateApplicationDto } from "./dto/update-application.dto";
 import { applicationSelect, citizenSelect } from "src/common/prisma/selects";
 import { UpdateApplicationLocationDto } from "./dto/update-application-location.dto";
 import { generateApplicationId } from "src/common/utils";
-import { Citizen } from "@prisma/client";
+import { ApplicationStatus, Citizen, Prisma } from "@prisma/client";
 import * as ExcelJS from "exceljs";
 import { Response } from "express";
 import { baseApplicationSelect } from "src/common/prisma/selects/application.select";
 import { serializeMyApplicationsRes } from "src/common/serializers/application.serializer";
 import { CitizenUpdateApplicationDto } from "./dto/citizen-update-application.dto";
+import { ApplicationFilters } from "src/common/types/application";
 
 @Injectable()
 export class ApplicationsService {
@@ -51,12 +52,62 @@ export class ApplicationsService {
     return result;
   }
 
-  async findAll(user: any) {
-    // Admins & supervisors can list
-    return this.prisma.application.findMany({
-      select: applicationSelect,
-      orderBy: { createdAt: "desc" },
-    });
+  async findAll(page: number, limit: number, filters: ApplicationFilters) {
+    const skip = (page - 1) * limit;
+
+    const where: Prisma.ApplicationWhereInput = {
+      ...(filters.status && { status: filters.status }),
+
+      ...(filters.applicationId && {
+        
+        id: filters.applicationId,
+      }),
+
+      ...(filters.fullName && {
+        citizen: {
+          full_name: {
+            contains: filters.fullName,
+            mode: "insensitive",
+          },
+        },
+      }),
+
+      ...(filters.nationalId && {
+        citizen: {
+          national_id: filters.nationalId,
+        },
+      }),
+
+      ...(filters.phone && {
+        citizen: {
+          OR: [
+            { phone_number: { contains: filters.phone } },
+            { whatsapp_number: { contains: filters.phone } },
+          ],
+        },
+      }),
+    };
+
+    const [data, total] = await this.prisma.$transaction([
+      this.prisma.application.findMany({
+        where,
+        select: applicationSelect,
+        skip,
+        take: limit,
+        orderBy: { createdAt: "desc" },
+      }),
+      this.prisma.application.count({ where }),
+    ]);
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   async findOne(id: string, user: any) {
@@ -196,7 +247,11 @@ export class ApplicationsService {
     res.end();
   }
 
-  async updateApplication(id: string, dto: CitizenUpdateApplicationDto,citizen:Citizen) {
+  async updateApplication(
+    id: string,
+    dto: CitizenUpdateApplicationDto,
+    citizen: Citizen
+  ) {
     const application = await this.prisma.application.findUnique({
       where: { id },
       include: { locations: true },
@@ -206,7 +261,7 @@ export class ApplicationsService {
       throw new NotFoundException("الطلب غير موجود");
     }
 
-    if(citizen.id !== application.citizenId){
+    if (citizen.id !== application.citizenId) {
       throw new ForbiddenException("غير مسموح");
     }
 
@@ -216,7 +271,6 @@ export class ApplicationsService {
       throw new NotFoundException("الموقع غير موجود");
     }
 
-   
     const locationData: any = {};
 
     if (dto.latitude) locationData.latitude = dto.latitude;
@@ -231,7 +285,6 @@ export class ApplicationsService {
       });
     }
 
-   
     const applicationData: any = {};
 
     if (dto.extraData) {

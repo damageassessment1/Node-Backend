@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Res,
   UseGuards,
 } from "@nestjs/common";
@@ -25,11 +26,13 @@ import { permissions } from "src/common/constats/permissions.constants";
 export class AdminBankAccountsController {
   constructor(private service: BanksService) {}
 
+ 
+
   @UseGuards(PermissionsGuard)
   @RequirePermissions(permissions.bank_account.view)
   @Get()
   getAllBankAcountsForCitizens() {
-    return this.service.getAllBankAcountsForCitizens();
+    return this.service.findAll();
   }
 
   @UseGuards(PermissionsGuard)

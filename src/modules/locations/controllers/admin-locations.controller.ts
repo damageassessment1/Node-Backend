@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from "@nestjs/common";
 import { LocationsService } from "../locations.service";
@@ -19,6 +20,7 @@ import {
 import { permissions } from "src/common/constats/permissions.constants";
 import { PermissionsGuard } from "src/common/guards/permissions.guard";
 import { RequirePermissions } from "src/common/decorators/requir-permission.decorator";
+import { LocationType } from "@prisma/client";
 
 @Controller(ADMIN_LOCATIONS_ROUTE_PREFIX)
 export class AdminLocationsController {
@@ -34,8 +36,23 @@ export class AdminLocationsController {
   @UseGuards(PermissionsGuard)
   @RequirePermissions(permissions.location.view)
   @Get()
-  findAll(@User() user: any) {
-    return this.svc.findAll(user);
+  findAll(
+    @User() user: any,
+    @Query("page") page = "1",
+    @Query("limit") limit = "10",
+    @Query("applicationId") applicationId?: string,
+    @Query("fullName") fullName?: string,
+    @Query("nationalId") nationalId?: string,
+    @Query("type") type?: LocationType,
+    @Query("neighborhood") neighborhood?: string
+  ) {
+    return this.svc.findAll(+page, +limit, {
+      applicationId,
+      fullName,
+      nationalId,
+      type,
+      neighborhood,
+    });
   }
 
   @UseGuards(PermissionsGuard)
