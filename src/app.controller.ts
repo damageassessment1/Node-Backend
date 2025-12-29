@@ -11,6 +11,4 @@ export class AppController {
   keepAlive() {
     return "Server is running";
   }
-
-
 }

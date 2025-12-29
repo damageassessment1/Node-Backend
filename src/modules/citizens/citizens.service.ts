@@ -16,9 +16,10 @@ import {
   baseCitizenSelect,
   citizenProfileSelect,
 } from "src/common/prisma/selects/citizen.select";
-import { Citizen } from "@prisma/client";
+import { Citizen, Prisma } from "@prisma/client";
 import { UpdateProfileDto } from "./dto/update-profile.dto";
 import { StorageService } from "../storage/storage.service";
+import { CitizenFilters } from "src/common/types/citizen";
 @Injectable()
 export class CitizensService {
   constructor(
@@ -76,21 +77,42 @@ export class CitizensService {
     return loc;
   }
 
-  async findAll(user: any) {
-    // If the requester is a supervisor, return only assigned citizens (read-only)
-    if (user?.role === "supervisor") {
-      return this.prisma.citizen.findMany({
-        select: citizenSelect,
+  async findAll(page = 1, limit = 10, filters: CitizenFilters = {}) {
+    const skip = (page - 1) * limit;
+
+    const where: Prisma.CitizenWhereInput = {
+      ...(filters.fullName && {
+        full_name: { contains: filters.fullName, mode: "insensitive" },
+      }),
+      ...(filters.nationalId && { national_id: filters.nationalId }),
+      ...(filters.phone && {
+        OR: [
+          { phone_number: { contains: filters.phone } },
+          { whatsapp_number: { contains: filters.phone } },
+        ],
+      }),
+    };
+
+    const [data, total] = await this.prisma.$transaction([
+      this.prisma.citizen.findMany({
+        select: baseCitizenSelect,
         orderBy: { createdAt: "desc" },
-      });
-    }
-    // Admins get all citizens (don't return password)
-    return this.prisma.citizen.findMany({
-      select: {
-        ...baseCitizenSelect,
+        skip,
+        take: limit,
+        where,
+      }),
+      this.prisma.citizen.count({ where }),
+    ]);
+
+    return {
+      data,
+      meta: {
+        page,
+        limit,
+        pagesCount: Math.ceil(total / limit),
+        total,
       },
-      orderBy: { createdAt: "desc" },
-    });
+    };
   }
 
   async findOne(id: number, user: any) {

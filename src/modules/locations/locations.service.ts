@@ -8,13 +8,16 @@ import { PrismaService } from "../database/prisma.service";
 import { CreateLocationDto } from "./dto/create-location.dto";
 import { UpdateLocationDto } from "./dto/update-location.dto";
 import { locationSelect } from "src/common/prisma/selects";
-import { Citizen, LocationType, User } from "@prisma/client";
+import { Citizen, LocationType, Prisma, User } from "@prisma/client";
 import {
   AddCurrentLocationDto,
   AddPreviousLocationDto,
 } from "./dto/add-location.dto";
 import { generateApplicationId } from "src/common/utils";
 import { StorageService } from "../storage/storage.service";
+import { LocationFilters } from "src/common/types/location";
+import { baseLocationSelect } from "src/common/prisma/selects/location.select";
+import { baseCitizenSelect } from "src/common/prisma/selects/citizen.select";
 
 @Injectable()
 export class LocationsService {
@@ -35,12 +38,45 @@ export class LocationsService {
     return loc;
   }
 
-  async findAll(user: User) {
-    // Both admin and supervisor can read locations
-    return this.prisma.location.findMany({
-      select: locationSelect,
-      orderBy: { createdAt: "desc" },
-    });
+  async findAll(page = 1, limit = 10, filters: LocationFilters = {}) {
+    const skip = (page - 1) * limit;
+
+    const where: Prisma.LocationWhereInput = {
+      ...(filters.applicationId && { applicationId: filters.applicationId }),
+      ...(filters.neighborhood && { neighborhood: { contains: filters.neighborhood, mode: "insensitive" } }),
+      ...(filters.fullName || filters.nationalId
+        ? {
+            citizen: {
+              ...(filters.fullName && {
+                full_name: { contains: filters.fullName, mode: "insensitive" },
+              }),
+              ...(filters.nationalId && { national_id: filters.nationalId }),
+            },
+          }
+        : {}),
+      ...(filters.type && { type: filters.type }),
+    };
+
+    const [data, total] = await this.prisma.$transaction([
+      this.prisma.location.findMany({
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+        where,
+        include: { citizen: { select: { ...baseCitizenSelect } } },
+      }),
+      this.prisma.location.count({ where }),
+    ]);
+
+    return {
+      data,
+      meta: {
+        page,
+        limit,
+        pagesCount: Math.ceil(total / limit),
+        total,
+      },
+    };
   }
 
   async findOne(id: number, user: any) {
@@ -96,7 +132,6 @@ export class LocationsService {
   ) {
     const { extraData, ...locationDto } = dto;
     let applicationExtraData = extraData ? JSON.parse(dto.extraData) : {};
-
 
     // handle images
     if (uploads && uploads.beforeWarImage) {

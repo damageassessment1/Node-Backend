@@ -20,7 +20,7 @@ export const baseLocationSelect = {
   citizenId: true,
   applicationId: true,
   updatedAt: true,
-} as const;
+} 
 
 export const locationSelect = {
   ...baseLocationSelect,
@@ -29,4 +29,4 @@ export const locationSelect = {
       ...baseCitizenSelect,
     },
   },
-} as const;
+} 
