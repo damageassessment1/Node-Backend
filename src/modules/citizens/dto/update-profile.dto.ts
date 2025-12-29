@@ -28,7 +28,7 @@ export class UpdateProfileDto {
   family_name?: string;
 
   @IsOptional()
-  @IsNumber()
+  @IsNumberString()
   family_members_number?: number;
 
   @IsOptional()
