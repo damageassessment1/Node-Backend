@@ -12,7 +12,10 @@ import * as bcrypt from "bcryptjs";
 import { v4 as uuidv4 } from "uuid";
 import * as ExcelJS from "exceljs";
 import { Response } from "express";
-import { baseCitizenSelect, citizenProfileSelect } from "src/common/prisma/selects/citizen.select";
+import {
+  baseCitizenSelect,
+  citizenProfileSelect,
+} from "src/common/prisma/selects/citizen.select";
 import { Citizen } from "@prisma/client";
 import { UpdateProfileDto } from "./dto/update-profile.dto";
 import { StorageService } from "../storage/storage.service";
@@ -124,18 +127,11 @@ export class CitizensService {
   async updateProfileData(
     citizen: Citizen,
     dto: UpdateProfileDto,
-    uploads: {
-      avatar: Express.Multer.File;
+    uploads?: {
+      avatar?: Express.Multer.File;
     }
   ) {
-    // console.log(uploads);
-    // console.log(
-    //   this.getImagePath(
-    //     "https://oufjobpdjqlveupjciuj.supabase.co/storage/v1/object/public/damageassessment/after_war_image/32a3b633-13ef-46de-a887-f1bdb56cfd17.png"
-    //   )
-    // );
-
-    // return;
+    const data: any = {};
 
     if (
       dto.first_name ||
@@ -143,27 +139,44 @@ export class CitizensService {
       dto.grandfather_name ||
       dto.family_name
     ) {
-      dto["full_name"] =
-        `${dto.first_name || citizen.first_name} ${dto.father_name || citizen.father_name} ${dto.grandfather_name || citizen.grandfather_name} ${dto.family_name || citizen.family_name}`.trim();
+      data.first_name = dto.first_name ?? citizen.first_name;
+      data.father_name = dto.father_name ?? citizen.father_name;
+      data.grandfather_name = dto.grandfather_name ?? citizen.grandfather_name;
+      data.family_name = dto.family_name ?? citizen.family_name;
+
+      data.full_name =
+        `${data.first_name} ${data.father_name} ${data.grandfather_name} ${data.family_name}`.trim();
     }
 
-    if (uploads && uploads.avatar) {
+    if (dto.date_of_birth) {
+      data.date_of_birth = new Date(dto.date_of_birth);
+    }
 
+    if (dto.family_members_number !== undefined) {
+      data.family_members_number = Number(dto.family_members_number);
+    }
+
+    if (uploads?.avatar) {
       const [file] = await this.storageService.handleUploads(
         uploads.avatar,
         "avatars"
       );
-      dto["avatar"] = file.url;
 
-      this.storageService.deleteFile(this.getImagePath(citizen.avatar))
+      data.avatar = file.url;
+
+      if (citizen.avatar) {
+        await this.storageService.deleteFile(this.getImagePath(citizen.avatar));
+      }
+    }
+
+    if (Object.keys(data).length === 0) {
+      return citizen;
     }
 
     return this.prisma.citizen.update({
       where: { id: citizen.id },
-      data: {
-        ...dto,
-      },
-      select:citizenProfileSelect
+      data,
+      select: citizenProfileSelect,
     });
   }
 
