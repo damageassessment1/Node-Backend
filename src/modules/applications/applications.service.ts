@@ -196,7 +196,11 @@ export class ApplicationsService {
     res.end();
   }
 
-  async updateApplication(id: string, dto: CitizenUpdateApplicationDto,citizen:Citizen) {
+  async updateApplication(
+    id: string,
+    dto: CitizenUpdateApplicationDto,
+    citizen: Citizen
+  ) {
     const application = await this.prisma.application.findUnique({
       where: { id },
       include: { locations: true },
@@ -206,21 +210,19 @@ export class ApplicationsService {
       throw new NotFoundException("الطلب غير موجود");
     }
 
-    if(citizen.id !== application.citizenId){
+    if (citizen.id !== application.citizenId) {
       throw new ForbiddenException("غير مسموح");
     }
 
     const location = application.locations[0];
-
     if (!location) {
       throw new NotFoundException("الموقع غير موجود");
     }
 
-   
     const locationData: any = {};
 
-    if (dto.latitude) locationData.latitude = dto.latitude;
-    if (dto.longitude) locationData.longitude = dto.longitude;
+    if (dto.latitude !== undefined) locationData.latitude = dto.latitude;
+    if (dto.longitude !== undefined) locationData.longitude = dto.longitude;
     if (dto.address) locationData.address = dto.address;
     if (dto.neighborhood) locationData.neighborhood = dto.neighborhood;
 
@@ -231,20 +233,22 @@ export class ApplicationsService {
       });
     }
 
-   
     const applicationData: any = {};
 
     if (dto.extraData) {
       applicationData.extraData = JSON.parse(dto.extraData);
     }
 
-    if (Object.keys(applicationData).length === 0) {
-      return application; // nothing to update
+    if (Object.keys(applicationData).length > 0) {
+      await this.prisma.application.update({
+        where: { id },
+        data: applicationData,
+      });
     }
 
-    return await this.prisma.application.update({
+    return this.prisma.application.findUnique({
       where: { id },
-      data: applicationData,
+      include: { locations: true },
     });
   }
 }
