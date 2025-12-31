@@ -73,9 +73,9 @@ model Citizen {
   family_name         String?
   full_name           String?
   family_members_number  Int?
-  phone_number        String?
-  email               String?
-  whatsapp_number     String?
+  phone_number        String?        @unique
+  email               String?         @unique
+  whatsapp_number     String?          @unique
   mother_name         String?
   place_of_birth      String?
   country             String?

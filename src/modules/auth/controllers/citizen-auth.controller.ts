@@ -25,12 +25,16 @@ import {
   ResetPasswordRequestDto,
 } from "../dto/change-password.dto";
 import { CitizenAuthService } from "../services/citizen-auth.service";
+import { CitizenVerificationService } from "../services/citizen-verification.service";
 import { FileFieldsInterceptor } from "@nestjs/platform-express";
 import { UploadsValidationPipe } from "src/common/validators/upload-validation.pipe";
 
 @Controller(CITIZEN_AUTH_ROUTE_PREFIX)
 export class CitizenAuthController {
-  constructor(private authService: CitizenAuthService) {}
+  constructor(
+    private authService: CitizenAuthService,
+    private verificationService: CitizenVerificationService
+  ) { }
 
   /**
    * Step 1: Verify National ID
@@ -38,7 +42,7 @@ export class CitizenAuthController {
   @Post(ROUTES.CITIZEN.AUTH.VERIFY_ID)
   @Public()
   async verifyNationalId(@Body() dto: VerifyIdDto) {
-    return this.authService.verifyNationalId(dto.nationalId);
+    return this.verificationService.verifyNationalId(dto.nationalId);
   }
   /**
    * Step 2: Verify Personal Questions
@@ -46,7 +50,7 @@ export class CitizenAuthController {
   @Post(ROUTES.CITIZEN.AUTH.VERIFY_QUESTIONS)
   @Public()
   async verifyQuestions(@Body() dto: VerifyQuestionsDto) {
-    return this.authService.verifySecurityQuestions(
+    return this.verificationService.verifySecurityQuestions(
       dto.nationalId,
       dto.answers
     );
