@@ -26,7 +26,7 @@ export class AdminAuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
     private passwordResetService: PasswordResetService
-  ) {}
+  ) { }
 
   async adminSignIn(dto: SigninDto) {
     const user = await this.prisma.user.findUnique({
@@ -64,7 +64,7 @@ export class AdminAuthService {
     }
 
     // Verify old password
-    const isMatch = await bcrypt.compare(dto.oldPassword, user.password);
+    const isMatch = await bcrypt.compare(dto.oldPassword, existingUser.password);
     if (!isMatch) {
       throw new UnauthorizedException("كلمة المرور القديمة غير صحيحة");
     }
@@ -94,14 +94,15 @@ export class AdminAuthService {
   }
 
   async adminResetPassword(token: string, password: string) {
+    const hashedPassword = await bcrypt.hash(password, 10);
     return this.passwordResetService.resetPassword(
       token,
-      () =>
-        this.prisma.user.findMany({
-          where: { resetTokenExpiry: { gt: new Date() } },
-        }),
+      (id) => this.prisma.user.findUnique({ where: { id } }),
       (id, data) =>
-        this.prisma.user.update({ where: { id }, data: { ...data, password } })
+        this.prisma.user.update({
+          where: { id },
+          data: { ...data, password: hashedPassword },
+        })
     );
   }
 }

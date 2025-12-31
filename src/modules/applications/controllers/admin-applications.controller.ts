@@ -22,7 +22,7 @@ import {
 import { PermissionsGuard } from "src/common/guards/permissions.guard";
 import { RequirePermissions } from "src/common/decorators/requir-permission.decorator";
 import { permissions } from "src/common/constats/permissions.constants";
-import { ApplicationStatus } from "@prisma/client";
+import { ApplicationQueryDto } from "../dto/application-query.dto";
 
 @Controller(ADMIN_APPLICATIONS_ROUTE_PREFIX)
 export class AdminApplicationsController {
@@ -39,17 +39,10 @@ export class AdminApplicationsController {
   @RequirePermissions(permissions.application.view)
   @Get()
   async findAll(
-  @User() user: any,
-  @Query('page') page = '1',
-  @Query('limit') limit = '10',
-  @Query('status') status?: ApplicationStatus,
-  @Query('applicationId') applicationId?: string,
-  @Query('fullName') fullName?: string,
-  @Query('nationalId') nationalId?: string,
-  @Query('phone') phone?: string,
-) {
-  return this.service.findAll(+page, +limit,  { status, applicationId, fullName, nationalId, phone });
-}
+     @Query() query: ApplicationQueryDto,
+  ) {
+    return this.service.findAll(query);
+  }
   @UseGuards(PermissionsGuard)
   @RequirePermissions(permissions.application.export)
   @Get(ROUTES.ADMIN.ACTIONS.EXPORT)

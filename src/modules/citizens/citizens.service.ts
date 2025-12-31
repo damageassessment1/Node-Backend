@@ -19,20 +19,15 @@ import {
 import { Citizen, Prisma } from "@prisma/client";
 import { UpdateProfileDto } from "./dto/update-profile.dto";
 import { StorageService } from "../storage/storage.service";
-import { CitizenFilters } from "src/common/types/citizen";
+import { CitizenQueryDto } from "./dto/citizen-query.dto";
 @Injectable()
 export class CitizensService {
   constructor(
     private prisma: PrismaService,
     private readonly storageService: StorageService
-  ) {}
+  ) { }
 
   async create(createDto: CreateCitizenDto) {
-    const existing = await this.prisma.citizen.findUnique({
-      where: { national_id: createDto.national_id },
-    });
-    if (existing) throw new ForbiddenException("Citizen already exists");
-
     const passwordPlain = createDto.password ?? uuidv4();
     const passwordHash = await bcrypt.hash(passwordPlain, 10);
     const data: any = {
@@ -44,12 +39,23 @@ export class CitizensService {
       full_name:
         `${createDto.first_name} ${createDto.father_name} ${createDto.grandfather_name} ${createDto.family_name}`.trim(),
       phone_number: createDto.phone_number,
+      password: passwordHash,
     };
-    const citizen = await this.prisma.citizen.create({
-      data,
-      select: baseCitizenSelect,
-    });
-    return citizen;
+
+    try {
+      const citizen = await this.prisma.citizen.create({
+        data,
+        select: baseCitizenSelect,
+      });
+      return citizen;
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === "P2002") {
+          throw new ForbiddenException("Citizen already exists");
+        }
+      }
+      throw error;
+    }
   }
 
   async createLocation(citizenId: number, dto: CreateLocationDto) {
@@ -77,7 +83,8 @@ export class CitizensService {
     return loc;
   }
 
-  async findAll(page = 1, limit = 10, filters: CitizenFilters = {}) {
+  async findAll(filters: CitizenQueryDto) {
+    const { page, limit } = filters;
     const skip = (page - 1) * limit;
 
     const where: Prisma.CitizenWhereInput = {
@@ -139,11 +146,22 @@ export class CitizensService {
       dto["full_name"] =
         `${dto.first_name || citizen.first_name} ${dto.father_name || citizen.father_name} ${dto.grandfather_name || citizen.grandfather_name} ${dto.family_name || citizen.family_name}`.trim();
     }
-    return this.prisma.citizen.update({
-      where: { id },
-      data: dto,
-      select: baseCitizenSelect,
-    });
+
+
+    try {
+      return await this.prisma.citizen.update({
+        where: { id },
+        data: dto,
+        select: baseCitizenSelect,
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === "P2002") {
+          throw new ForbiddenException("Citizen already exists with this National ID");
+        }
+      }
+      throw error;
+    }
   }
 
   async updateProfileData(
@@ -205,10 +223,23 @@ export class CitizensService {
   async remove(id: number) {
     const citizen = await this.prisma.citizen.findUnique({ where: { id } });
     if (!citizen) throw new NotFoundException("Citizen not found");
-    return this.prisma.citizen.delete({ where: { id }, select: citizenSelect });
+    try {
+      return await this.prisma.citizen.delete({
+        where: { id },
+        select: citizenSelect,
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === "P2003") {
+          throw new ForbiddenException(
+            "Cannot delete citizen because they have related records (e.g. applications/locations)"
+          );
+        }
+      }
+      throw error;
+    }
   }
 
-  // assignSupervisor functionality removed - supervision is determined by users' role and external admin workflows
 
   async exportCitizens(res: Response) {
     const citizens = await this.prisma.citizen.findMany({});

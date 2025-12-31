@@ -2,7 +2,6 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
-  ForbiddenException,
   BadRequestException,
 } from "@nestjs/common";
 import { PrismaService } from "../database/prisma.service";
@@ -12,11 +11,11 @@ import { baseUserSelect } from "src/common/prisma/selects";
 import * as ExcelJS from "exceljs";
 import { Response } from "express";
 import { Prisma, User } from "@prisma/client";
-import { UserFilters } from "src/common/types/users";
+import { UserQueryDto } from "./dto/user-query.dto";
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async create(createUserDto: CreateUserDto) {
     // Check if user already exists
@@ -31,19 +30,29 @@ export class UsersService {
     // Hash password
     const hash = await bcrypt.hash(createUserDto.password, 10);
 
-    // Create user
-    const user = await this.prisma.user.create({
-      data: {
-        ...createUserDto,
-        password: hash,
-      },
-      select: baseUserSelect,
-    });
+    try {
+      // Create user
+      const user = await this.prisma.user.create({
+        data: {
+          ...createUserDto,
+          password: hash,
+        },
+        select: baseUserSelect,
+      });
 
-    return user;
+      return user;
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === "P2002") {
+          throw new ConflictException("User already exists");
+        }
+      }
+      throw error;
+    }
   }
 
-  async findAll(page: number, limit: number, filters: UserFilters) {
+  async findAll(filters: UserQueryDto) {
+    const { page, limit } = filters;
     const skip = (page - 1) * limit;
 
     const where: Prisma.UserWhereInput = {
@@ -103,11 +112,24 @@ export class UsersService {
       }
     }
 
-    return this.prisma.user.update({
-      where: { id },
-      data: updateUserDto,
-      select: baseUserSelect,
-    });
+    if (updateUserDto.password) {
+      updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
+    }
+
+    try {
+      return await this.prisma.user.update({
+        where: { id },
+        data: updateUserDto,
+        select: baseUserSelect,
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === "P2002") {
+          throw new ConflictException("Email already exists");
+        }
+      }
+      throw error;
+    }
   }
 
   async remove(id: number, authUser: User) {
@@ -123,24 +145,24 @@ export class UsersService {
       throw new BadRequestException("you can not delete this user");
     }
 
-    return this.prisma.user.delete({
-      where: { id },
-      select: baseUserSelect,
-    });
+    try {
+      return await this.prisma.user.delete({
+        where: { id },
+        select: baseUserSelect,
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === "P2003") {
+          throw new BadRequestException(
+            "Cannot delete user because they have related records (e.g. created applications)"
+          );
+        }
+      }
+      throw error;
+    }
   }
 
-  async searchSupervisors(query: string) {
-    return this.prisma.user.findMany({
-      where: {
-        role: {},
-        OR: [
-          { name: { contains: query, mode: "insensitive" } },
-          { email: { contains: query, mode: "insensitive" } },
-        ],
-      },
-      select: baseUserSelect,
-    });
-  }
+
 
   async exportUsers(res: Response) {
     const users = await this.prisma.user.findMany({

@@ -8,7 +8,7 @@ export class PasswordResetService {
   constructor(
     private jwtService: JwtService,
     private mailService: MailService
-  ) {}
+  ) { }
 
   async requestReset(
     entity: any,
@@ -46,37 +46,32 @@ export class PasswordResetService {
 
   async resetPassword(
     token: string,
-    findValidFn: () => Promise<any>,
+    findUserFn: (id: any) => Promise<any>,
     updateFn: (id: number, data: any) => Promise<any>
   ) {
+    let payload: any;
     try {
-      this.jwtService.verify(token);
+      payload = this.jwtService.verify(token);
     } catch {
       throw new UnauthorizedException("الرابط غير صالح أو منتهي");
     }
 
-    const records = await findValidFn();
-
-    const entity = await this.matchToken(records, token);
-    if (!entity) {
+    const entity = await findUserFn(payload.sub);
+    if (!entity || !entity.resetToken) {
       throw new UnauthorizedException("الرابط غير صالح");
     }
 
+    const isMatch = await bcrypt.compare(token, entity.resetToken);
+    if (!isMatch) {
+      throw new UnauthorizedException("الرابط غير صالح");
+    }
+
+    // Pass data directly (password should be hashed by caller)
     await updateFn(entity.id, {
-      password: await bcrypt.hash(entity.password, 10),
       resetToken: null,
       resetTokenExpiry: null,
     });
 
     return { success: true };
-  }
-
-  private async matchToken(records: any, token: string) {
-    for (const r of records) {
-      if (r.resetToken && (await bcrypt.compare(token, r.resetToken))) {
-        return r;
-      }
-    }
-    return null;
   }
 }

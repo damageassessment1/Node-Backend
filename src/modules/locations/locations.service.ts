@@ -1,23 +1,21 @@
 import {
   Injectable,
   NotFoundException,
-  ForbiddenException,
   BadRequestException,
 } from "@nestjs/common";
 import { PrismaService } from "../database/prisma.service";
 import { CreateLocationDto } from "./dto/create-location.dto";
 import { UpdateLocationDto } from "./dto/update-location.dto";
 import { locationSelect } from "src/common/prisma/selects";
-import { Citizen, LocationType, Prisma, User } from "@prisma/client";
+import { Citizen, LocationType, Prisma } from "@prisma/client";
 import {
   AddCurrentLocationDto,
   AddPreviousLocationDto,
 } from "./dto/add-location.dto";
 import { generateApplicationId } from "src/common/utils";
 import { StorageService } from "../storage/storage.service";
-import { LocationFilters } from "src/common/types/location";
-import { baseLocationSelect } from "src/common/prisma/selects/location.select";
 import { baseCitizenSelect } from "src/common/prisma/selects/citizen.select";
+import { LocationQueryDto } from "./dto/location-query.dto";
 
 @Injectable()
 export class LocationsService {
@@ -38,12 +36,15 @@ export class LocationsService {
     return loc;
   }
 
-  async findAll(page = 1, limit = 10, filters: LocationFilters = {}) {
+  async findAll(filters: LocationQueryDto) {
+    const { page, limit } = filters;
     const skip = (page - 1) * limit;
 
     const where: Prisma.LocationWhereInput = {
       ...(filters.applicationId && { applicationId: filters.applicationId }),
-      ...(filters.neighborhood && { neighborhood: { contains: filters.neighborhood, mode: "insensitive" } }),
+      ...(filters.neighborhood && {
+        neighborhood: { contains: filters.neighborhood, mode: "insensitive" },
+      }),
       ...(filters.fullName || filters.nationalId
         ? {
             citizen: {

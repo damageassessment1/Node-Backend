@@ -8,10 +8,9 @@ import {
 } from "@nestjs/common";
 import * as bcrypt from "bcryptjs";
 import { JwtService } from "@nestjs/jwt";
-import { ChangePasswordDto, CompleteSignupDto, SigninDto } from "../dto";
-import { baseUserSelect } from "src/common/prisma/selects";
+import { ChangePasswordDto, CompleteSignupDto } from "../dto";
 import { PrismaService } from "../../database/prisma.service";
-import { Citizen, User, VerificationStatus } from "@prisma/client";
+import { Citizen, VerificationStatus } from "@prisma/client";
 import { StorageService } from "src/modules/storage/storage.service";
 import { PasswordResetService } from "./password-reset.service";
 
@@ -29,7 +28,7 @@ export class CitizenAuthService {
     private readonly storageService: StorageService,
 
     private passwordResetService: PasswordResetService
-  ) {}
+  ) { }
 
   async verifyNationalId(nationalId: string) {
     const idNum = Number(nationalId);
@@ -282,16 +281,14 @@ export class CitizenAuthService {
   }
 
   async citizenResetPassword(token: string, password: string) {
+    const hashedPassword = await bcrypt.hash(password, 10);
     return this.passwordResetService.resetPassword(
       token,
-      () =>
-        this.prisma.citizen.findMany({
-          where: { resetTokenExpiry: { gt: new Date() } },
-        }),
+      (id) => this.prisma.citizen.findUnique({ where: { id } }),
       (id, data) =>
         this.prisma.citizen.update({
           where: { id },
-          data: { ...data, password },
+          data: { ...data, password: hashedPassword },
         })
     );
   }

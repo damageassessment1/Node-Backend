@@ -2,7 +2,6 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
-  ConflictException,
 } from "@nestjs/common";
 import { PrismaService } from "../database/prisma.service";
 import { CreateApplicationDto } from "./dto/create-application.dto";
@@ -10,13 +9,13 @@ import { UpdateApplicationDto } from "./dto/update-application.dto";
 import { applicationSelect, citizenSelect } from "src/common/prisma/selects";
 import { UpdateApplicationLocationDto } from "./dto/update-application-location.dto";
 import { generateApplicationId } from "src/common/utils";
-import { ApplicationStatus, Citizen, Prisma } from "@prisma/client";
+import { Citizen, Prisma } from "@prisma/client";
 import * as ExcelJS from "exceljs";
 import { Response } from "express";
 import { baseApplicationSelect } from "src/common/prisma/selects/application.select";
 import { serializeMyApplicationsRes } from "src/common/serializers/application.serializer";
 import { CitizenUpdateApplicationDto } from "./dto/citizen-update-application.dto";
-import { ApplicationFilters } from "src/common/types/application";
+import { ApplicationQueryDto } from "./dto/application-query.dto";
 
 @Injectable()
 export class ApplicationsService {
@@ -52,14 +51,14 @@ export class ApplicationsService {
     return result;
   }
 
-  async findAll(page: number, limit: number, filters: ApplicationFilters) {
+  async findAll(query: ApplicationQueryDto) {
+    const { page, limit, ...filters } = query;
     const skip = (page - 1) * limit;
 
     const where: Prisma.ApplicationWhereInput = {
       ...(filters.status && { status: filters.status }),
 
       ...(filters.applicationId && {
-        
         id: filters.applicationId,
       }),
 
@@ -84,6 +83,17 @@ export class ApplicationsService {
             { phone_number: { contains: filters.phone } },
             { whatsapp_number: { contains: filters.phone } },
           ],
+        },
+      }),
+
+      ...((filters.fromDate || filters.toDate) && {
+        createdAt: {
+          ...(filters.fromDate && {
+            gte: new Date(filters.fromDate),
+          }),
+          ...(filters.toDate && {
+            lte: new Date(filters.toDate),
+          }),
         },
       }),
     };

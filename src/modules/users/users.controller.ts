@@ -24,10 +24,11 @@ import {
 import { PermissionsGuard } from "src/common/guards/permissions.guard";
 import { RequirePermissions } from "src/common/decorators/requir-permission.decorator";
 import { permissions } from "src/common/constats/permissions.constants";
+import { UserQueryDto } from "./dto/user-query.dto";
 
 @Controller(ADMIN_USERS_ROUTE_PREFIX)
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private readonly usersService: UsersService) { }
 
   @UseGuards(PermissionsGuard)
   @RequirePermissions(permissions.user.create)
@@ -39,13 +40,8 @@ export class UsersController {
   @UseGuards(PermissionsGuard)
   @RequirePermissions(permissions.user.view)
   @Get()
-  async findAll(
-    @Query("page") page = "1",
-    @Query("limit") limit = "10",
-    @Query("fullName") fullName?: string,
-    @Query("email") email?: string
-  ) {
-    return this.usersService.findAll(+page, +limit, { fullName, email });
+  async findAll(@Query() query: UserQueryDto) {
+    return this.usersService.findAll(query);
   }
 
   @UseGuards(PermissionsGuard)
@@ -73,10 +69,5 @@ export class UsersController {
     @User() user: UserType
   ) {
     return this.usersService.remove(id, user);
-  }
-
-  @Get("search-supervisors")
-  searchSupervisors(@Query("query") query: string) {
-    return this.usersService.searchSupervisors(query);
   }
 }
