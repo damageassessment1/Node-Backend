@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Put } from "@nestjs/common";
+import { Body, Controller, Get, Param, Patch, Put, UploadedFiles, UseInterceptors } from "@nestjs/common";
 import { Citizen as CitizenType } from "@prisma/client";
 import { Citizen } from "src/common/decorators/citizen.decorator";
 import { ApplicationsService } from "../applications.service";
@@ -9,6 +9,8 @@ import {
   ROUTES,
 } from "src/common/constats/routes.constants";
 import { CitizenUpdateApplicationDto } from "../dto/citizen-update-application.dto";
+import { UploadsValidationPipe } from "src/common/validators/upload-validation.pipe";
+import { FileFieldsInterceptor } from "@nestjs/platform-express";
 
 @Controller(CITIZEN_APPLICATIONS_ROUTE_PREFIX)
 export class CitizenApplicationsController {
@@ -26,7 +28,29 @@ export class CitizenApplicationsController {
   }
 
   @Put(`:${APPLICATION_ID_PARAM}`)
-  async updateApplication(@Param(APPLICATION_ID_PARAM) id: string,@Body() dto:CitizenUpdateApplicationDto,@Citizen() citizen: CitizenType) {
-    return this.service.updateApplication(id,dto,citizen);
+   @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: "beforeWarImage", maxCount: 1 },
+      { name: "afterWarImage", maxCount: 1 },
+      { name: "ownershipDocuments", maxCount: 5 },
+    ])
+  )
+  async updateApplication(
+    @Param(APPLICATION_ID_PARAM) id: string,
+    @Body() dto: CitizenUpdateApplicationDto,
+    @Citizen() citizen: CitizenType,
+ @UploadedFiles(new UploadsValidationPipe())
+    uploads: {
+      beforeWarImage?: Express.Multer.File[];
+      afterWarImage?: Express.Multer.File[];
+      ownershipDocuments?: Express.Multer.File[];
+    },
+
+  ) {
+    return this.service.updateApplication(id, dto, citizen,{
+        beforeWarImage: uploads.beforeWarImage?.[0],
+        afterWarImage: uploads.afterWarImage?.[0],
+        ownershipDocuments: uploads.ownershipDocuments,
+      });
   }
 }

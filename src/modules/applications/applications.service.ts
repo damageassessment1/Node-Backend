@@ -16,10 +16,14 @@ import { baseApplicationSelect } from "src/common/prisma/selects/application.sel
 import { serializeMyApplicationsRes } from "src/common/serializers/application.serializer";
 import { CitizenUpdateApplicationDto } from "./dto/citizen-update-application.dto";
 import { ApplicationQueryDto } from "./dto/application-query.dto";
+import { StorageService } from "../storage/storage.service";
 
 @Injectable()
 export class ApplicationsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private readonly storageService: StorageService
+  ) {}
 
   async create(dto: CreateApplicationDto, user: any) {
     // Only admin can create
@@ -260,7 +264,12 @@ export class ApplicationsService {
   async updateApplication(
     id: string,
     dto: CitizenUpdateApplicationDto,
-    citizen: Citizen
+    citizen: Citizen,
+    uploads?: {
+      beforeWarImage?: Express.Multer.File;
+      afterWarImage?: Express.Multer.File;
+      ownershipDocuments?: Express.Multer.File[];
+    }
   ) {
     const application = await this.prisma.application.findUnique({
       where: { id },
@@ -280,30 +289,95 @@ export class ApplicationsService {
       throw new NotFoundException("الموقع غير موجود");
     }
 
-    const locationData: any = {};
+    /* -------------------- Location Update -------------------- */
+    const locationData: Record<string, any> = {};
 
     if (dto.latitude !== undefined) locationData.latitude = dto.latitude;
     if (dto.longitude !== undefined) locationData.longitude = dto.longitude;
     if (dto.address) locationData.address = dto.address;
     if (dto.neighborhood) locationData.neighborhood = dto.neighborhood;
 
-    if (Object.keys(locationData).length > 0) {
+    if (Object.keys(locationData).length) {
       await this.prisma.location.update({
         where: { id: location.id },
         data: locationData,
       });
     }
 
-    const applicationData: any = {};
+    /* -------------------- Extra Data Preparation -------------------- */
+    const currentExtraData: any = application.extraData ?? {};
+    const nextExtraData: any = dto.extraData ? JSON.parse(dto.extraData) : {};
 
-    if (dto.extraData) {
-      applicationData.extraData = JSON.parse(dto.extraData);
+    // preserve existing images if not replaced
+    if (currentExtraData.beforeWarImage) {
+      nextExtraData.beforeWarImage = currentExtraData.beforeWarImage;
     }
 
-    if (Object.keys(applicationData).length > 0) {
+    if (currentExtraData.afterWarImage) {
+      nextExtraData.afterWarImage = currentExtraData.afterWarImage;
+    }
+
+    if (currentExtraData.ownershipDocuments?.length) {
+      nextExtraData.ownershipDocuments = currentExtraData.ownershipDocuments;
+    }
+
+    /* -------------------- Images Handling -------------------- */
+
+    // Before war image
+    if (uploads?.beforeWarImage) {
+      const [file] = await this.storageService.handleUploads(
+        uploads.beforeWarImage,
+        "applications/before-war"
+      );
+
+      nextExtraData.beforeWarImage = file;
+
+      if (currentExtraData.beforeWarImage?.path) {
+        await this.storageService.deleteFile(
+          currentExtraData.beforeWarImage.path
+        );
+      }
+    }
+
+    // After war image
+    if (uploads?.afterWarImage) {
+      const [file] = await this.storageService.handleUploads(
+        uploads.afterWarImage,
+        "applications/after-war"
+      );
+
+      nextExtraData.afterWarImage = file;
+
+      if (currentExtraData.afterWarImage?.path) {
+        await this.storageService.deleteFile(
+          currentExtraData.afterWarImage.path
+        );
+      }
+    }
+
+    // Ownership documents
+    if (uploads?.ownershipDocuments?.length) {
+      const files = await this.storageService.handleUploads(
+        uploads.ownershipDocuments,
+        "applications/ownership"
+      );
+
+      nextExtraData.ownershipDocuments = files;
+
+      if (currentExtraData.ownershipDocuments?.length) {
+        for (const doc of currentExtraData.ownershipDocuments) {
+          if (doc?.path) {
+            await this.storageService.deleteFile(doc.path);
+          }
+        }
+      }
+    }
+
+    /* -------------------- Application Update -------------------- */
+    if (Object.keys(nextExtraData).length) {
       await this.prisma.application.update({
         where: { id },
-        data: applicationData,
+        data: { extraData: nextExtraData },
       });
     }
 
